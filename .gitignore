@@ -1,0 +1,6 @@
+*.jwt
+working
+authinfo.txt
+.authinfo
+.sasstudio5
+.bash_history
