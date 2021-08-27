@@ -4,16 +4,48 @@ This repo contains info and scripts you help get you up and running with the new
 
 This repo should be used in conjunction with the official [SAS Analytics Pro Deployment Guide](https://go.documentation.sas.com/doc/en/anprocdc/default/anprowlcm/home.htm).  The intention of this repo is to make a few things for the less technical user a bit easier to get up and running.
 
-## Docker on Linux
-1. Follow steps 1 and 2 in the `Docker on Linux` section of the official Deployment Guide.
-2. Copy your license `jwt` file into the `sasinside` directory of this repo.
-3. As long as you have run the `docker login` command from step 2 of the Deployment Guide, you should now just be able to run `./launchapro.sh` from the Terminal (after cd'ing into the directory).
+## Pre-requisites
+* [Docker Desktop](https://www.docker.com/products/docker-desktop)
+* [SAS Mirror Manager](https://support.sas.com/en/documentation/install-center/viya/deployment-tools/4/mirror-manager.html)
+* Your Certificate (`*-certs.zip`) file from the `My Orders` section of my.sas.com
+* Your License (`*.jwt`) from the `My Orders` section of my.sas.com
+* Clone of this repo. The root of this repo is the `$deploy` directory mentioned in the SAS Deployment Guide.
+* Instructions below assume you have a command prompt/terminal open and have changed directory into the top level of this repo.
+
+
+## Docker Desktop on Linux
+1. Follow Step 1 in the `Docker on Linux` section of the official Deployment Guide to make sure that you have the following three files in the top level directory:
+   * _SAS-certificates-file-name_.zip
+   * _SAS-license-file-name_.jwt
+   * `mirrormgr`
+2. Run the following command to log into the SAS Container Registry (this equates to Step 2 of the Deployment Guide):
+```
+eval $(./mirrormgr list remote docker login --deployment-data SAS-certificates-file-name.zip)
+```
+3. Copy your license `jwt` file into the `sasinside` directory of this repo.
+4. Run `./launchapro.sh` from the Terminal.
+5. Run the following command to get your password:
+```
+docker logs sas-analytics-pro 2>&1 | grep "Password="
+```
+6. In your browser navigate to http://localhost:81 and login using your normal username and the password from step 5.
 
 ## Docker Desktop on Mac
-1. Follow steps 1 and 2 in the `Docker on Linux` section of the official Deployment Guide.
-2. Copy your license `jwt` file into the `sasinside` directory of this repo.
-3. As long as you have run the `docker login` command from step 2 of the Deployment Guide, you should now just be able to run `./launchapro.sh` from the Terminal (after cd'ing into the directory).
-
+1. Follow Step 1 in the `Docker on Linux` section of the official Deployment Guide to make sure that you have the following three files in the top level directory:
+   * _SAS-certificates-file-name_.zip
+   * _SAS-license-file-name_.jwt
+   * `mirrormgr`
+2. Run the following command to log into the SAS Container Registry (this equates to Step 2 of the Deployment Guide):
+```
+eval $(./mirrormgr list remote docker login --deployment-data SAS-certificates-file-name.zip)
+```
+3. Copy your license `jwt` file into the `sasinside` directory of this repo.
+4. Run `./launchapro.sh` from the Terminal.
+5. Run the following command to get your password:
+```
+docker logs sas-analytics-pro 2>&1 | grep "Password="
+```
+6. In your browser navigate to http://localhost:81 and login using your normal username and the password from step 5.
 ## Docker Desktop on Windows
 TBD
 
