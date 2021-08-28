@@ -1,4 +1,6 @@
 *.jwt
+*.zip
+mirrormgr*
 working
 authinfo.txt
 .authinfo

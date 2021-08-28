@@ -11,11 +11,11 @@ SAS_DEBUG=0
 
 # Username to use
 # If this is not specified then the user will be sasdemo
-# Using $USER will use the same user as you are on Linux/Mac
+# Using $USER will use the same user as you are on Windows/Linux/Mac
 SAS_DEMO_USER=$USER
 
 # Enable SAS Lockdown?
 SASLOCKDOWN=0
 
 # Custom SAS System Options
-SASV9_OPTIONS='-NOTES'
+SASV9_OPTIONS=

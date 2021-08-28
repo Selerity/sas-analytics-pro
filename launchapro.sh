@@ -49,6 +49,8 @@ then
   exit 1
 fi
 
+export SASLICENSEFILE
+
 run_args="
 --name=sas-analytics-pro
 --rm

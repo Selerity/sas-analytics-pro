@@ -46,18 +46,23 @@ eval $(./mirrormgr list remote docker login --deployment-data SAS-certificates-f
 docker logs sas-analytics-pro 2>&1 | grep "Password="
 ```
 6. In your browser navigate to http://localhost:81 and login using your normal username and the password from step 5.
-## Docker Desktop on Windows
-TBD
+## Docker Desktop on Windows (using WSL2)
+1. Make sure you are using a directory on a local drive for these instructions - do not use a Network Drive (drive letter mapped to a UNC path) or a UNC Path.
+2. Follow Step 1 in the `Docker Desktop on Windows` section of the official Deployment Guide to make sure that you have the following three files in the top level directory:
+   * _SAS-certificates-file-name_.zip
+   * _SAS-license-file-name_.jwt
+   * `mirrormgr`
+3. Run the following command to log into the SAS Container Registry (this equates to Step 2 of the Deployment Guide):
+```
+Invoke-Expression -Command $(mirrormgr list remote docker login --deployment-data SAS-certificates-file-name.zip)
+```
+3. Copy your license `jwt` file into the `sasinside` directory of this repo.
+4. Run `launchapro.ps1` from a Powershell command prompt.
+5. Run the following command to get your password:
+```
+docker logs sas-analytics-pro 2>&1 | Select-String "Password="
+```
+6. In your browser navigate to http://localhost:81 and login using your normal username and the password from step 5.
 
 ## Environment Notes
 When you launch the new SAS Analytics Pro environment your user interface into SAS will be via your browser using SAS Studio.  Whether you are running your environment using Docker on Windows, Linux or Mac, all paths within the environment will use Unix paths.  With the default configuration the only file system location common to both your SAS environment and your local machine will be the `data` directory within this repo.
-
-## Running SAS in batch
-You can utilise the SAS Analytics Pro container to run your SAS programs in batch. This is achieved by following these steps:
-1. Save your `program.sas` file in the `data` directory.
-2. Run the following command:
-```
-./launchapro.sh --batch /data/program.sas
-```
-
-**Note:** You will notice that we saved the program file into the `data` directory, which is a subdirectory of this repo, but then referenced that same program with the absolute path `/data/program.sas` on the command line. This is because the `data` directory in this repo is mounted as `/data` _within_ the SAS Analytics Pro environment.
