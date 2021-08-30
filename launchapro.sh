@@ -66,4 +66,4 @@ RUN_ARGS="
 --volume ${PWD}/data:/data"
 
 # Run Analytics Pro container with supplied arguments
-docker run -u root "${RUN_ARGS}" "${IMAGE}:${IMAGE_VERSION}" "${@}"
+docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
