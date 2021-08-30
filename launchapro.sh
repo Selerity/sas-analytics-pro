@@ -1,18 +1,17 @@
 #!/bin/bash
 
 # Ensure that apro.settings file is present
-if [ -f apro.settings ]
-then
+if [[ -f apro.settings ]]; then
   source apro.settings
-  if [[ -n "$1" ]] && [[ $1 == *"--batch"* ]]
-  then
-    SAS_RUN_HTTPD=false
+
+  if [[ -n "${1}" && ${1} == *"--batch"* ]]; then
+    SAS_RUN_HTTPD="false"
   else
-    SAS_RUN_HTTPD=true
+    SAS_RUN_HTTPD="true"
   fi
-  if [[ -z "${RUN_MODE}" ]]
-  then
-    RUN_MODE=developer
+
+  if [[ -z "${RUN_MODE}" ]]; then
+    RUN_MODE="developer"
   fi
   export SAS_RUN_HTTPD
   export STUDIO_HTTP_PORT
@@ -28,30 +27,28 @@ else
 fi
 
 # Ensure that sasinside directory exists
-if [ ! -d sasinside ]
-then
+if [[ ! -d sasinside ]]; then
   echo "ERROR: sasinside directory not found"
   exit 1
 fi
 
 # Ensure that data directory exists
-if [ ! -d data ]
-then
+if [[ ! -d data ]]; then
   echo "ERROR: data directory not found"
   exit 1
 fi
 
 # Get latest license from sasinside directory
 SASLICENSEFILE=$(basename $(ls -r sasinside/*.jwt 2>/dev/null | head -1) 2>/dev/null)
-if [ "x${SASLICENSEFILE}x" == "xx" ]
-then
+if [[ "x${SASLICENSEFILE}x" == "xx" ]]; then
   echo "ERROR: Could not locate SAS license file in sasinside directory"
   exit 1
 fi
 
 export SASLICENSEFILE
 
-run_args="
+# Create runtime arugments
+RUN_ARGS="
 --name=sas-analytics-pro
 --rm
 --detach
@@ -68,5 +65,5 @@ run_args="
 --volume ${PWD}/sasinside:/sasinside
 --volume ${PWD}/data:/data"
 
-
-docker run -u root ${run_args} ${IMAGE}:${IMAGE_VERSION} "$@"
+# Run Analytics Pro container with supplied arguments
+docker run -u root "${RUN_ARGS}" "${IMAGE}:${IMAGE_VERSION}" "${@}"
