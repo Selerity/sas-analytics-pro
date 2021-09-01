@@ -81,6 +81,12 @@ if (-Not (Select-String -Path $env:USERPROFILE\.docker\config.json -Pattern "cr.
   $mirrormgr_dir | Remove-Item -Force -Recurse
 }
 
+# Get Local Windows Drives
+$drives = [System.IO.DriveInfo]::GetDrives() | Where-Object { $_.DriveType -eq [System.IO.DriveType]::Fixed}
+foreach ($drive in $drives)  { 
+    $windows_drives = -join (" ", $windows_drives, " --volume '", $drive.RootDirectory, ":/mnt/", $drive.RootDirectory.ToString().SubString(0,1).ToLower(), "'")
+}
+
 $run_args = "-u root " +
 "--name=sas-analytics-pro " +
 "--rm " +
@@ -96,7 +102,8 @@ $run_args = "-u root " +
 "--env SASV9_OPTIONS " +
 "--publish " + $config.STUDIO_HTTP_PORT + ":80 " +
 "--volume '$pwd\sasinside:/sasinside' " +
-"--volume '$pwd\data:/data'"
+"--volume '$pwd\data:/data' " +
+$windows_drives
 
 $cmd = "docker run " + $run_args + " " + $config.IMAGE + ":" + $config.IMAGE_VERSION + " $args"
 
