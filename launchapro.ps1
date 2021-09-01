@@ -3,6 +3,9 @@
 # This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivitives License. To view a copy 
 # of the license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/
 
+$ScriptDir = Split-Path $script:MyInvocation.MyCommand.Path
+Set-Location -Path $ScriptDir
+
 # Ensure that apro.settings file is present
 if (Test-Path -Path ".\apro.settings" -PathType Leaf) {
   $config = Get-Content .\apro.settings | Out-String | ConvertFrom-StringData
