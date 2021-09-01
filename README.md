@@ -6,7 +6,6 @@ This repo should be used in conjunction with the official [SAS Analytics Pro Dep
 
 ## Pre-requisites
 * [Docker Desktop](https://www.docker.com/products/docker-desktop)
-* [SAS Mirror Manager](https://support.sas.com/en/documentation/install-center/viya/deployment-tools/4/mirror-manager.html)
 * Your Certificate (`*-certs.zip`) file from the `My Orders` section of my.sas.com
 * Your License (`*.jwt`) from the `My Orders` section of my.sas.com
 * Clone of this repo. The root of this repo is the `$deploy` directory mentioned in the SAS Deployment Guide.
