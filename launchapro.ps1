@@ -50,8 +50,36 @@ if ($config.SASLICENSEFILE -eq $null) {
   Write-Host "ERROR: Could not locate SAS license file in sasinside directory"
   Exit 1
 }
-
 $env:SASLICENSEFILE = $config.SASLICENSEFILE.Name
+
+# Get latest certificate ZIP
+$config.SASCERTFILE = Get-ChildItem . -Filter "SASViyaV4_*_certs.zip" | Sort-Object -Descending
+if ($config.SASCERTFILE -eq $null) {
+  Write-Host "ERROR: Could not locate SAS certificates file in current directory"
+  Exit 1
+}
+# Check if Docker has previously authenticate to cr.sas.com
+if (-Not (Select-String -Path $env:USERPROFILE\.docker\config.json -Pattern "cr.sas.com" -Quiet) ) {
+  # Previous authentication not found, so we need to get login using mirrormgr
+  Write-Host "Existing login to SAS Docker Registry not found. Attempting to authenticate..."
+  # Download mirrormgr
+  # create temp with zip extension (or Expand will complain)
+  $tmp = New-TemporaryFile | Rename-Item -NewName { $_ -replace 'tmp$', 'zip' } -PassThru
+  #download
+  Invoke-WebRequest -OutFile $tmp "https://support.sas.com/installation/viya/4/sas-mirror-manager/wx6/mirrormgr-windows.zip"
+  # Create temp directory
+  $mirrormgr_dir = New-Item -ItemType "directory" -Path "$env:TEMP\mirrormgr"
+  #exract to same folder 
+  $tmp | Expand-Archive -DestinationPath $mirrormgr_dir -Force
+  # remove temporary file
+  $tmp | Remove-Item
+  # Log into the SAS docker registry
+  $docker_user = Invoke-Expression -Command $(-join($mirrormgr_dir.FullName, "\mirrormgr.exe list remote docker login user --deployment-data ", $config.SASCERTFILE))
+  $docker_pass = Invoke-Expression -Command $(-join($mirrormgr_dir.FullName, "\mirrormgr.exe list remote docker login password --deployment-data ", $config.SASCERTFILE))
+  $docker_pass | docker login cr.sas.com --username $docker_user --password-stdin
+  # clean up
+  $mirrormgr_dir | Remove-Item -Force -Recurse
+}
 
 $run_args = "-u root " +
 "--name=sas-analytics-pro " +

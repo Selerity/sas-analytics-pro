@@ -6,3 +6,7 @@ authinfo.txt
 .authinfo
 .sasstudio5
 .bash_history
+.vscode
+data/.cache
+data/.local
+data/.python_history
