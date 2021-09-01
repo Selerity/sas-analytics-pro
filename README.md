@@ -66,3 +66,9 @@ docker logs sas-analytics-pro 2>&1 | Select-String "Password="
 
 ## Environment Notes
 When you launch the new SAS Analytics Pro environment your user interface into SAS will be via your browser using SAS Studio.  Whether you are running your environment using Docker on Windows, Linux or Mac, all paths within the environment will use Unix paths.  With the default configuration the only file system location common to both your SAS environment and your local machine will be the `data` directory within this repo.
+
+# License
+(c) Selerity Pty. Ltd. 2021.  All Rights Reserved.
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivitives License. To view a copy 
+of the license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/
