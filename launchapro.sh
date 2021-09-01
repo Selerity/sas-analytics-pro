@@ -1,4 +1,8 @@
 #!/bin/bash
+# (c) Selerity Pty. Ltd. 2021.  All Rights Reserved.
+#
+# This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivitives License. To view a copy 
+# of the license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/
 
 # Ensure that apro.settings file is present
 if [[ -f apro.settings ]]; then
