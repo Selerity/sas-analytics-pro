@@ -112,6 +112,7 @@ $run_args = "-u root " +
 "--env SASV9_OPTIONS " +
 "--publish " + $config.STUDIO_HTTP_PORT + ":80 " +
 "--volume '$pwd\sasinside:/sasinside' " +
+"--volume '$pwd\python:/python' " +
 "--volume '$pwd\data:/data' " +
 $windows_drives +
 $jupyterlab_args
