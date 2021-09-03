@@ -78,7 +78,7 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
 fi
 
 # Jupyter Lab
-if [[ ${JUPYTERLAB} ]]; then
+if [[ ${JUPYTERLAB} == "true" ]]; then
   JUPYTERLAB_ARGS="--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ${JUPYTERLAB_HTTP_PORT}:8888"
 else
   JUPYTERLAB_ARGS=""

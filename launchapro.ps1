@@ -85,7 +85,7 @@ if (-Not (Select-String -Path $env:USERPROFILE\.docker\config.json -Pattern "cr.
 }
 
 # Jupyter Lab
-if ( $config.JUPYTERLAB -eq '1' ) {
+if ( $config.JUPYTERLAB -eq 'true' ) {
   $jupyterlab_args = -join ("--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ", $config.JUPYTERLAB_HTTP_PORT, ":8888")
 } else {
   $jupyterlab_args = ""
