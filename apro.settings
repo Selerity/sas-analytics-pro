@@ -24,3 +24,7 @@ SASLOCKDOWN=0
 
 # Custom SAS System Options
 SASV9_OPTIONS=
+
+# Enable Jupyter Lab?
+JUPYTERLAB=1
+JUPYTERLAB_HTTP_PORT=8888

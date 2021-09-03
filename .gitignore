@@ -10,3 +10,8 @@ authinfo.txt
 data/.cache
 data/.local
 data/.python_history
+data/.jupyter
+python
+*.ipynb
+__pycache__
+.ipython
