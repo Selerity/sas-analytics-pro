@@ -8,7 +8,7 @@ source /python/bin/activate
 pip install --upgrade pip
 echo "Installing Jupyter Lab and SAS Kernel"
 pip install wheel
-pip install jupyterlab ipykernel sas_kernel
+pip install pandas jupyterlab ipykernel sas_kernel
 echo "Starting Jupyter Lab"
 existing_pw=$(cat authinfo.txt|awk '{print $5}')
 python -m jupyter_server.auth password ${existing_pw}
