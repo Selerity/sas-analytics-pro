@@ -17,7 +17,7 @@ This repo should be used in conjunction with the official [SAS Analytics Pro Dep
    * _SAS-certificates-file-name_.zip
    * _SAS-license-file-name_.jwt
 2. Copy your license `jwt` file into the `sasinside` directory of this repo.
-3. Run `./launchapro.sh` from the Terminal.
+3. Run `./launch.cmd` from the Terminal.
 4. Run the following command to get your password:
 ```
 docker logs sas-analytics-pro 2>&1 | grep "Password="
@@ -29,7 +29,7 @@ docker logs sas-analytics-pro 2>&1 | grep "Password="
    * _SAS-certificates-file-name_.zip
    * _SAS-license-file-name_.jwt
 2. Copy your license `jwt` file into the `sasinside` directory of this repo.
-3. Run `./launchapro.sh` from the Terminal.
+3. Run `./launch.cmd` from the Terminal.
 4. Run the following command to get your password:
 ```
 docker logs sas-analytics-pro 2>&1 | grep "Password="
@@ -41,7 +41,7 @@ docker logs sas-analytics-pro 2>&1 | grep "Password="
    * _SAS-certificates-file-name_.zip
    * _SAS-license-file-name_.jwt
 3. Copy your license `jwt` file into the `sasinside` directory of this repo.
-4. Run `launchapro.ps1` from a Powershell command prompt.
+4. Run `launch.cmd` from a command prompt.
 5. Run the following command to get your password:
 ```
 docker logs sas-analytics-pro 2>&1 | Select-String "Password="

@@ -5,7 +5,7 @@ You can utilise the SAS Analytics Pro container to run your SAS programs in batc
 1. Save your `program.sas` file in the `data` directory.
 2. Run the following command:
 ```
-./launchapro.sh --batch /data/program.sas
+launch.cmd --batch /data/program.sas
 ```
 
 **Note:** You will notice that we saved the program file into the `data` directory, which is a subdirectory of this repo, but then referenced that same program with the absolute path `/data/program.sas` on the command line. This is because the `data` directory in this repo is mounted as `/data` _within_ the SAS Analytics Pro environment.

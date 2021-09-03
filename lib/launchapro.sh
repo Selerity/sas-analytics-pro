@@ -4,9 +4,6 @@
 # This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivitives License. To view a copy 
 # of the license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/
 
-SCRIPT_ROOT=$(dirname $0)
-cd ${SCRIPT_ROOT}
-
 # Ensure that apro.settings file is present
 if [[ -f apro.settings ]]; then
   source apro.settings
@@ -29,26 +26,26 @@ if [[ -f apro.settings ]]; then
   export SASLOCKDOWN
   export SASV9_OPTIONS
 else
-  echo "ERROR: apro.settings file not found"
+  printf "ERROR: apro.settings file not found\n"
   exit 1
 fi
 
 # Ensure that sasinside directory exists
 if [[ ! -d sasinside ]]; then
-  echo "ERROR: sasinside directory not found"
+  printf "ERROR: sasinside directory not found\n"
   exit 1
 fi
 
 # Ensure that data directory exists
 if [[ ! -d data ]]; then
-  echo "ERROR: data directory not found"
+  printf "ERROR: data directory not found\n"
   exit 1
 fi
 
 # Get latest license from sasinside directory
 SASLICENSEFILE=$(basename $(ls -r sasinside/*.jwt 2>/dev/null | head -1) 2>/dev/null)
 if [[ "x${SASLICENSEFILE}x" == "xx" ]]; then
-  echo "ERROR: Could not locate SAS license file in sasinside directory"
+  printf "ERROR: Could not locate SAS license file in sasinside directory\n"
   exit 1
 fi
 export SASLICENSEFILE
@@ -56,13 +53,13 @@ export SASLICENSEFILE
 # Get latest certificate ZIP
 SASCERTFILE=$(basename $(ls -r ./SASViyaV4_*_certs.zip 2>/dev/null | head -1) 2>/dev/null)
 if [[ "x${SASCERTFILE}x" == "xx" ]]; then
-  echo "ERROR: Could not locate SAS certificate file in current directory"
+  printf "ERROR: Could not locate SAS certificate file in current directory\n"
   exit 1
 fi
 # Check if Docker has previously authenticate to cr.sas.com
 if ! grep -q cr.sas.com ~/.docker/config.json; then
   # Previous authentication not found, so we need to get login using mirrormgr
-  echo "Previous login to the SAS Docker registry not found. Attempting to get login..."
+  printf "Previous login to the SAS Docker registry not found. Attempting to get login...\n"
   case "$(uname)" in
     "Linux")
       MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/lax/mirrormgr-linux.tgz"
@@ -72,9 +69,9 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
       ;;
   esac
   # Download mirrormgr
-  curl -s ${MIRRORURL} | tar xz mirrormgr
+  curl -s "${MIRRORURL}" | tar xz mirrormgr
   # Log into the SAS docker registry
-  eval $(./mirrormgr list remote docker login --deployment-data ${SASCERTFILE}) 2>&1 | grep -vi WARNING
+  eval $(./mirrormgr list remote docker login --deployment-data "${SASCERTFILE}") 2>&1 | grep -vi WARNING
 fi
 
 # Create runtime arugments
