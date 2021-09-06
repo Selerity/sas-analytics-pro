@@ -160,14 +160,14 @@ else
 
     echo -n "."
 
-    if [[ ! -z ${STUDIO_START} ]]; then
+    if [[ -n ${STUDIO_START} ]]; then
       # SAS Studio has started
       if [[ -z ${STUDIO_FLAG} ]]; then 
         echo -n "S"
         STUDIO_FLAG=1
       fi
       if [[ ${JUPYTERLAB} == "true" ]]; then
-        if [[ ! -z ${JUPYTER_START} ]]; then
+        if [[ -n ${JUPYTER_START} ]]; then
           # Jupyter Lab has started
           echo -e "J"
           break
@@ -183,7 +183,7 @@ else
     exit 1
   fi
 
-  if [[ ! -z ${APRO_PASSWORD} ]]; then
+  if [[ -n ${APRO_PASSWORD} ]]; then
     echo ${APRO_PASSWORD}
   fi
 
