@@ -48,7 +48,7 @@ if (-Not(Test-Path -Path "data")) {
 }
 
 # Get latest license from sasinside directory
-$config.SASLICENSEFILE = Get-ChildItem .\sasinside -Filter "*.jwt" | Sort-Object -Descending
+$config.SASLICENSEFILE = Get-ChildItem . -Filter "*.jwt" | Sort-Object -Descending
 if ($config.SASLICENSEFILE -eq $null) {
   Write-Host "ERROR: Could not locate SAS license file in sasinside directory"
   Exit 1
