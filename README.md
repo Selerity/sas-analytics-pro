@@ -16,7 +16,7 @@ This repo should be used in conjunction with the official [SAS Analytics Pro Dep
 1. Follow Step 1 in the `Docker on Linux` section of the official Deployment Guide to make sure that you have your license and certificate files in the top level directory:
    * _SAS-certificates-file-name_.zip
    * _SAS-license-file-name_.jwt
-2. Copy your license `jwt` file into the `sasinside` directory of this repo.
+2. Copy your license `jwt` file into the root directory of this repo.
 3. Run `./launchapro.sh` from the Terminal.
 4. Run the following command to get your password:
 ```
@@ -28,7 +28,7 @@ docker logs sas-analytics-pro 2>&1 | grep "Password="
 1. Follow Step 1 in the `Docker on Linux` section of the official Deployment Guide to make sure that you have your license and certificate files in the top level directory:
    * _SAS-certificates-file-name_.zip
    * _SAS-license-file-name_.jwt
-2. Copy your license `jwt` file into the `sasinside` directory of this repo.
+2. Copy your license `jwt` file into the root directory of this repo.
 3. Run `./launchapro.sh` from the Terminal.
 4. Run the following command to get your password:
 ```
@@ -40,7 +40,7 @@ docker logs sas-analytics-pro 2>&1 | grep "Password="
 2. Follow Step 1 in the `Docker Desktop on Windows` section of the official Deployment Guide to make sure that you your license and certificate files in the top level directory:
    * _SAS-certificates-file-name_.zip
    * _SAS-license-file-name_.jwt
-3. Copy your license `jwt` file into the `sasinside` directory of this repo.
+3. Copy your license `jwt` file into the root directory of this repo.
 4. Run `launchapro.ps1` from a Powershell command prompt.
 5. Run the following command to get your password:
 ```
