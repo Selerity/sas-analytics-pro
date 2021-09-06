@@ -53,7 +53,7 @@ LINUX_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt
 DARWIN_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt" -print0 | xargs -0 stat -f "%m %N" >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
 LICENSEFILE="${HOST_OS^^}_LICENSEFILE"
 if [[ -n "${!LICENSEFILE}" ]]; then
-  mv "${!LICENSEFILE}" "sasinside/${!LICENSEFILE##*/}"
+  cp "${!LICENSEFILE}" "sasinside/${!LICENSEFILE##*/}"
   SASLICENSEFILE="${!LICENSEFILE##*/}"
 else
   echo "ERROR: Could not locate SAS license file"
