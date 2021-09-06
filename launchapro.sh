@@ -46,7 +46,7 @@ if [[ ! -d data ]]; then
 fi
 
 # Get latest license file
-SASLICENSEFILE=$(find ~+ -type f -iname "*.jwt" -printf '%T@ %P\n' | sort -n | awk 'NR<=1 {print $2}')
+SASLICENSEFILE=$(find ~+ -type f -iname "*.jwt" -printf '%T@ %P\n' | sort -nr | awk 'NR<=1 {print $2}')
 if [[ -z "${SASLICENSEFILE}" ]]; then
   echo "ERROR: Could not locate SAS license file"
   exit 1
@@ -54,7 +54,7 @@ fi
 export SASLICENSEFILE
 
 # Get latest certificate ZIP
-SASCERTFILE=$(find ~+ -type f -iname "SASViyaV4_*_certs.zip" -printf '%T@ %P\n' | sort -n | awk 'NR<=1 {print $2}')
+SASCERTFILE=$(find ~+ -type f -iname "SASViyaV4_*_certs.zip" -printf '%T@ %P\n' | sort -nr | awk 'NR<=1 {print $2}')
 if [[ -z "${SASCERTFILE}" ]]; then
   echo "ERROR: Could not locate SAS certificate file"
   exit 1
