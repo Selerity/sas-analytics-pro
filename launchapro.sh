@@ -8,7 +8,7 @@ SCRIPT_ROOT=$(dirname $0)
 cd ${SCRIPT_ROOT}
 
 # determine host operating system
-HOST_OS=$(uname)
+HOST_OS=$(uname|tr '[:upper:]' '[:lower:])
 
 # Ensure that apro.settings file is present
 if [[ -f apro.settings ]]; then
@@ -65,7 +65,7 @@ export SASLICENSEFILE
 # Get latest certificate ZIP
 LINUX_CERTFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_certs.zip" -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
 DARWIN_CERTFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_certs.zip" -print0 | xargs -0 stat -f "%m %N" 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
-SASCERTFILE="${HOST_OS^^}_CERTFILE"
+SASCERTFILE="${HOST_OS}_CERTFILE"
 if [[ -z "${!SASCERTFILE}" ]]; then
   echo "ERROR: Could not locate SAS certificate file"
   exit 1
@@ -76,10 +76,10 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
   # Previous authentication not found, so we need to get login using mirrormgr
   echo "Previous login to the SAS Docker registry not found. Attempting to get login..."
   case "${HOST_OS}" in
-    "Linux")
+    "LINUX")
       MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/lax/mirrormgr-linux.tgz"
       ;;
-    "Darwin")
+    "DARWIN")
       MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/mac/mirrormgr-osx.tgz"
       ;;
   esac
