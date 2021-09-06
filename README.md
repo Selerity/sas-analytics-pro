@@ -1,6 +1,6 @@
 # SAS Analytics Pro (Cloud-Native)
 ## Overview
-This repo contains info and scripts you help get you up and running with the new Cloud-Native (containerised) version of SAS Analytics Pro from the SAS Institute.  The first release of this software is version 2021.1.4 (August 2021).
+This repo contains info and scripts to help get you up and running with the new Cloud-Native (containerised) version of SAS Analytics Pro from the SAS Institute.  The first release of this software is version 2021.1.4 (August 2021).
 
 This repo should be used in conjunction with the official [SAS Analytics Pro Deployment Guide](https://go.documentation.sas.com/doc/en/anprocdc/default/anprowlcm/home.htm).  The intention of this repo is to make a few things for the less technical user a bit easier to get up and running.
 

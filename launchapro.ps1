@@ -84,6 +84,13 @@ if (-Not (Select-String -Path $env:USERPROFILE\.docker\config.json -Pattern "cr.
   $mirrormgr_dir | Remove-Item -Force -Recurse
 }
 
+# Jupyter Lab
+if ( $config.JUPYTERLAB -eq 'true' ) {
+  $jupyterlab_args = -join ("--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ", $config.JUPYTERLAB_HTTP_PORT, ":8888")
+} else {
+  $jupyterlab_args = ""
+}
+
 # Get Local Windows Drives
 $drives = [System.IO.DriveInfo]::GetDrives() | Where-Object { $_.DriveType -eq [System.IO.DriveType]::Fixed}
 foreach ($drive in $drives)  { 
@@ -105,8 +112,10 @@ $run_args = "-u root " +
 "--env SASV9_OPTIONS " +
 "--publish " + $config.STUDIO_HTTP_PORT + ":80 " +
 "--volume '$pwd\sasinside:/sasinside' " +
+"--volume '$pwd\python:/python' " +
 "--volume '$pwd\data:/data' " +
-$windows_drives
+$windows_drives +
+$jupyterlab_args
 
 $cmd = "docker run " + $run_args + " " + $config.IMAGE + ":" + $config.IMAGE_VERSION + " $args"
 

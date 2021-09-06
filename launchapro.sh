@@ -77,6 +77,13 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
   eval $(./mirrormgr list remote docker login --deployment-data ${SASCERTFILE}) 2>&1 | grep -vi WARNING
 fi
 
+# Jupyter Lab
+if [[ ${JUPYTERLAB} == "true" ]]; then
+  JUPYTERLAB_ARGS="--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ${JUPYTERLAB_HTTP_PORT}:8888"
+else
+  JUPYTERLAB_ARGS=""
+fi
+
 # Create runtime arugments
 RUN_ARGS="
 --name=sas-analytics-pro
@@ -93,7 +100,9 @@ RUN_ARGS="
 --env SASV9_OPTIONS
 --publish ${STUDIO_HTTP_PORT}:80
 --volume ${PWD}/sasinside:/sasinside
---volume ${PWD}/data:/data"
+--volume ${PWD}/python:/python
+--volume ${PWD}/data:/data
+${JUPYTERLAB_ARGS}"
 
 # Run Analytics Pro container with supplied arguments
 docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
