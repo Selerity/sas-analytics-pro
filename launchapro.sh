@@ -7,6 +7,9 @@
 SCRIPT_ROOT=$(dirname $0)
 cd ${SCRIPT_ROOT}
 
+# determine host operating system
+HOST_OS=$(uname)
+
 # Ensure that apro.settings file is present
 if [[ -f apro.settings ]]; then
   source apro.settings
@@ -45,12 +48,18 @@ if [[ ! -d data ]]; then
   exit 1
 fi
 
-# Get latest license file
-SASLICENSEFILE=$(find ~+ -type f -iname "*.jwt" -printf '%T@ %p\n' | sort -nr | awk 'NR<=1 {print $2}')
-if [[ -z "${SASLICENSEFILE}" ]]; then
+# Get latest license file, then move to sasinside/
+LINUX_LICENSEFILE=$(find ~+ -type f -iname "*.jwt" -printf '%T@ %p\n' >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+DARWIN_LICENSEFILE=$(find ~+ -type f -iname "*.jwt" -print0 | xargs -0 stat -f "%m %N" >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+LICENSEFILE="${HOST_OS^^}_LICENSEFILE"
+if [[ -n "${!LICENSEFILE}" ]]; then
+  mv "${!LICENSEFILE}" "sasinside/${!LICENSEFILE##*/}"
+  SASLICENSEFILE="sasinside/${!LICENSEFILE##*/}"
+else
   echo "ERROR: Could not locate SAS license file"
   exit 1
 fi
+
 export SASLICENSEFILE
 
 # Get latest certificate ZIP
@@ -64,7 +73,7 @@ fi
 if ! grep -q cr.sas.com ~/.docker/config.json; then
   # Previous authentication not found, so we need to get login using mirrormgr
   echo "Previous login to the SAS Docker registry not found. Attempting to get login..."
-  case "$(uname)" in
+  case "${HOST_OS}" in
     "Linux")
       MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/lax/mirrormgr-linux.tgz"
       ;;
