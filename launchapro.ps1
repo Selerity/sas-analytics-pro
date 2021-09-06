@@ -18,8 +18,15 @@ if (Test-Path -Path ".\apro.settings" -PathType Leaf) {
   $config = Get-Content .\apro.settings | Out-String | ConvertFrom-StringData
   if ($args[0] -eq "--batch") {
     $config.SAS_RUN_HTTPD = "false"
+    $config.BATCH_MODE = "true"
+    $config.NAME = ""
+    $config.STUDIO = ""
   } else {
     $config.SAS_RUN_HTTPD = "true"
+    $config.BATCH_MODE = "false"
+    $config.STUDIO = "--publish " + $config.STUDIO_HTTP_PORT + ":80 "
+    $config.NAME="--name=sas-analytics-pro"
+
   }
   if ($config.RUN_MODE -eq $null) {
     $config.RUN_MODE = "developer"
@@ -92,7 +99,7 @@ if (-Not (Select-String -Path $env:USERPROFILE\.docker\config.json -Pattern "cr.
 }
 
 # Jupyter Lab
-if ( $config.JUPYTERLAB -eq 'true' ) {
+if ( $config.JUPYTERLAB -eq 'true' -And $config.BATCH_MODE -eq 'false' ) {
   $jupyterlab_args = -join ("--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ", $config.JUPYTERLAB_HTTP_PORT, ":8888")
 } else {
   $jupyterlab_args = ""
@@ -105,7 +112,7 @@ foreach ($drive in $drives)  {
 }
 
 $run_args = "-u root " +
-"--name=sas-analytics-pro " +
+$config.NAME + " " +
 "--rm " +
 "--detach " +
 "--hostname sas-analytics-pro " +
@@ -117,7 +124,7 @@ $run_args = "-u root " +
 "--env SAS_DEMO_USER " +
 "--env SASLOCKDOWN " +
 "--env SASV9_OPTIONS " +
-"--publish " + $config.STUDIO_HTTP_PORT + ":80 " +
+$config.STUDIO + " " +
 "--volume '$pwd\sasinside:/sasinside' " +
 "--volume '$pwd\python:/python' " +
 "--volume '$pwd\data:/data' " +
@@ -126,4 +133,69 @@ $jupyterlab_args
 
 $cmd = "docker run " + $run_args + " " + $config.IMAGE + ":" + $config.IMAGE_VERSION + " $args"
 
-Invoke-Expression $cmd
+$container=(Invoke-Expression $cmd)
+
+if ( $LASTEXITCODE -gt 0 ) {
+  Write-Host "ERROR: Something went wrong trying to launch SAS Analytics Pro. Please refer to the documentation."
+  Exit 1
+}
+
+if ( $config.BATCH_MODE -eq 'true' ) {
+  Write-Host "#############################################"
+  Write-Host "#    SAS Analytics Pro Personal Launcher    #"
+  Write-Host "#-------------------------------------------#"
+  Write-Host "# Batch Mode                                #"
+  Write-Host "#############################################"
+  $container_name = (docker inspect --format='{{.Name}}' $container)
+  Write-Host "Name: " $container_name
+} else {
+  # Monitor SAS Analytics Pro as it starts up
+  Write-Host "#############################################"
+  Write-Host "#    SAS Analytics Pro Personal Launcher    #"
+  Write-Host "#-------------------------------------------#"
+  Write-Host "# S = SAS Studio has started                #"
+  if ( $config.JUPYTERLAB -eq "true" ) {
+    Write-Host "# J = Jupyter Lab has started               #"
+  }
+  Write-Host "#############################################"
+  Write-Host -NoNewline "."
+  $timing = 5,5,5,5,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+  foreach ($_check in $timing) {
+    Start-Sleep -s $_check
+    $apro_password = if ($null -eq $apro_password) { (docker logs $container 2>&1 | Select-String "Password=") }
+    $studio_start = if ($null -eq $studio_start) { (docker logs $container 2>&1 | Select-String "service Root WebApplicationContext: initialization completed") }
+    if ( $config.JUPYTERLAB -eq "true" ) {
+      $jupyter_start = if ($null -eq $jupyter_start) { (docker logs $container 2>&1 | Select-String "Jupyter Server ") }
+    }
+
+    Write-Host -NoNewline "."
+
+    if ( -Not $studio_start -eq "" ) {
+      # SAS Studio has started
+      if ( $null -eq $studio_flag ) {
+        Write-Host -NoNewLine "S"
+        $studio_flag = 1
+      }
+      if ( $config.JUPYTERLAB -eq 'true' ) {
+        if ( -Not $jupyter_start -eq "" ) {
+          # Jupyter Lab has started
+          Write-Host -NoNewline "J"
+          Break
+        }
+      } else {
+        Break
+      }
+    }
+  }
+
+  if ( $null -eq $studio_start ) {
+    Write-Host "WARNING: Could not detect startup of SAS Studio.  Please manually check status with ""docker logs sas-analytics-pro"""
+    Exit 1
+  }
+
+  if ( -Not $null -eq $apro_password ) {
+    Write-Host "`n" $apro_password
+  }
+
+  Write-Host "To stop your SAS Analytics Pro instance, use ""docker stop sas-analytics-pro"" `n"
+}

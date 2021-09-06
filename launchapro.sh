@@ -21,11 +21,13 @@ if [[ -f apro.settings ]]; then
   if [[ -n "${1}" && ${1} == *"--batch"* ]]; then
     BATCH_MODE="true"
     SAS_RUN_HTTPD="false"
-    $NAME=""
+    NAME=""
+    STUDIO=""
   else
     BATCH_MODE="false"
     SAS_RUN_HTTPD="true"
-    NAME="sas-analytics-pro"
+    STUDIO="--publish ${STUDIO_HTTP_PORT}:80"
+    NAME="--name=sas-analytics-pro"
     if [[ "$(docker inspect --format='{{.State.Status}}' sas-analytics-pro 2>&1)" == "running" ]]; then
       echo "ERROR: SAS Analytics Pro is already running."
       exit 1
@@ -93,7 +95,7 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
 fi
 
 # Jupyter Lab
-if [[ ${JUPYTERLAB} == "true" ]]; then
+if [[ "${JUPYTERLAB}" == "true" && "${BATCH_MODE}" == "false" ]]; then
   JUPYTERLAB_ARGS="--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ${JUPYTERLAB_HTTP_PORT}:8888"
 else
   JUPYTERLAB_ARGS=""
@@ -101,7 +103,7 @@ fi
 
 # Create runtime arugments
 RUN_ARGS="
---name=sas-analytics-pro
+${NAME}
 --rm
 --detach
 --hostname sas-analytics-pro
@@ -113,7 +115,7 @@ RUN_ARGS="
 --env SAS_DEMO_USER
 --env SASLOCKDOWN
 --env SASV9_OPTIONS
---publish ${STUDIO_HTTP_PORT}:80
+${STUDIO}
 --volume ${PWD}/sasinside:/sasinside
 --volume ${PWD}/python:/python
 --volume ${PWD}/data:/data
@@ -129,23 +131,23 @@ if [[ $? > 0 ]]; then
 fi
 
 if [[ ${BATCH_MODE} == "true" ]]; then
-  echo "############################################"
-  echo "#    SAS Analytic Pro Personal Launcher    #"
-  echo "#------------------------------------------#"
-  echo "# Batch Mode                               #"
-  echo "############################################"
+  echo "#############################################"
+  echo "#    SAS Analytics Pro Personal Launcher    #"
+  echo "#-------------------------------------------#"
+  echo "# Batch Mode                                #"
+  echo "#############################################"
   CONTAINER_NAME=$(docker inspect --format='{{.Name}}' ${CONTAINER})
   echo "Name: ${CONTAINER_NAME}"
 else
   # Monitor SAS Analytics Pro as it starts up
-  echo "############################################"
-  echo "#    SAS Analytic Pro Personal Launcher    #"
-  echo "#------------------------------------------#"
-  echo "# S = SAS Studio has started               #"
+  echo "#############################################"
+  echo "#    SAS Analytics Pro Personal Launcher    #"
+  echo "#-------------------------------------------#"
+  echo "# S = SAS Studio has started                #"
   if [[ ${JUPYTERLAB} == "true" ]]; then
-    echo "# J = Jupyter Lab has started              #"
+    echo "# J = Jupyter Lab has started               #"
   fi
-  echo "############################################"
+  echo "#############################################"
   echo -n "."
   TIMING="5 5 5 5 10 10 30 30 30 60"
   for _check in ${TIMING}; do
@@ -177,7 +179,7 @@ else
   done
 
   if [[ -z ${STUDIO_START} ]]; then
-    echo "WARNING: Cloud not detect startup of SAS Studio.  Please manually check status with \"docker logs sas-analytics-pro\""
+    echo "WARNING: Could not detect startup of SAS Studio.  Please manually check status with \"docker logs sas-analytics-pro\""
     exit 1
   fi
 
