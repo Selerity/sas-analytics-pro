@@ -45,20 +45,21 @@ if [[ ! -d data ]]; then
   exit 1
 fi
 
-# Get latest license from sasinside directory
-SASLICENSEFILE=$(basename $(ls -r sasinside/*.jwt 2>/dev/null | head -1) 2>/dev/null)
-if [[ "x${SASLICENSEFILE}x" == "xx" ]]; then
-  echo "ERROR: Could not locate SAS license file in sasinside directory"
+# Get latest license file
+SASLICENSEFILE=$(find ~+ -type f -iname "*.jwt" 2>/dev/null | head -1)
+if [[ -z "${SASLICENSEFILE}" ]]; then
+  echo "ERROR: Could not locate SAS license file"
   exit 1
 fi
 export SASLICENSEFILE
 
 # Get latest certificate ZIP
-SASCERTFILE=$(basename $(ls -r ./SASViyaV4_*_certs.zip 2>/dev/null | head -1) 2>/dev/null)
-if [[ "x${SASCERTFILE}x" == "xx" ]]; then
-  echo "ERROR: Could not locate SAS certificate file in current directory"
+SASCERTFILE=$(find ~+ -type f -iname "SASViyaV4_*_certs.zip" 2>/dev/null | head -1)
+if [[ -z "${SASCERTFILE}" ]]; then
+  echo "ERROR: Could not locate SAS certificate file"
   exit 1
 fi
+
 # Check if Docker has previously authenticate to cr.sas.com
 if ! grep -q cr.sas.com ~/.docker/config.json; then
   # Previous authentication not found, so we need to get login using mirrormgr
