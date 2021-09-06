@@ -112,4 +112,4 @@ RUN_ARGS="
 ${JUPYTERLAB_ARGS}"
 
 # Run Analytics Pro container with supplied arguments
-echo docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
+docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
