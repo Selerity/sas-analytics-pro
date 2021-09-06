@@ -49,12 +49,12 @@ if [[ ! -d data ]]; then
 fi
 
 # Get latest license file, then move to sasinside/
-LINUX_LICENSEFILE=$(find ~+ -type f -iname "*.jwt" -printf '%T@ %p\n' >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
-DARWIN_LICENSEFILE=$(find ~+ -type f -iname "*.jwt" -print0 | xargs -0 stat -f "%m %N" >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+LINUX_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt" -printf '%T@ %p\n' >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+DARWIN_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt" -print0 | xargs -0 stat -f "%m %N" >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
 LICENSEFILE="${HOST_OS^^}_LICENSEFILE"
 if [[ -n "${!LICENSEFILE}" ]]; then
   mv "${!LICENSEFILE}" "sasinside/${!LICENSEFILE##*/}"
-  SASLICENSEFILE="sasinside/${!LICENSEFILE##*/}"
+  SASLICENSEFILE="${!LICENSEFILE##*/}"
 else
   echo "ERROR: Could not locate SAS license file"
   exit 1
@@ -63,8 +63,10 @@ fi
 export SASLICENSEFILE
 
 # Get latest certificate ZIP
-SASCERTFILE=$(find ~+ -type f -iname "SASViyaV4_*_certs.zip" -printf '%T@ %p\n' | sort -nr | awk 'NR<=1 {print $2}')
-if [[ -z "${SASCERTFILE}" ]]; then
+LINUX_CERTFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_certs.zip" -printf '%T@ %p\n' >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+DARWIN_CERTFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_certs.zip" -print0 | xargs -0 stat -f "%m %N" >/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+SASCERTFILE="${HOST_OS^^}_CERTFILE"
+if [[ -z "${!SASCERTFILE}" ]]; then
   echo "ERROR: Could not locate SAS certificate file"
   exit 1
 fi
@@ -84,7 +86,7 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
   # Download mirrormgr
   curl -s ${MIRRORURL} | tar xz mirrormgr
   # Log into the SAS docker registry
-  eval $(./mirrormgr list remote docker login --deployment-data ${SASCERTFILE}) 2>&1 | grep -vi WARNING
+  eval $(./mirrormgr list remote docker login --deployment-data ${!SASCERTFILE}) 2>&1 | grep -vi WARNING
 fi
 
 # Jupyter Lab
