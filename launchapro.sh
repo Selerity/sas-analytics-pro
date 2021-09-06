@@ -51,7 +51,7 @@ fi
 # Get latest license file, then move to sasinside/
 LINUX_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt" -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
 DARWIN_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt" -print0 | xargs -0 stat -f "%m %N" 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
-LICENSEFILE="${HOST_OS^^}_LICENSEFILE"
+LICENSEFILE="${HOST_OS}_LICENSEFILE"
 if [[ -n "${!LICENSEFILE}" ]]; then
   cp "${!LICENSEFILE}" "sasinside/${!LICENSEFILE##*/}"
   SASLICENSEFILE="${!LICENSEFILE##*/}"
