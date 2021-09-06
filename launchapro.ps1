@@ -6,6 +6,13 @@
 $ScriptDir = Split-Path $script:MyInvocation.MyCommand.Path
 Set-Location -Path $ScriptDir
 
+# Check that docker is running
+$docker_status=(docker version 2>&1)
+if ($LASTEXITCODE -gt 0) {
+  Write-Host "ERROR: A running docker client is required to use this software.  Please install or start your instance of Docker before proceeding."
+  Exit 1
+}
+
 # Ensure that apro.settings file is present
 if (Test-Path -Path ".\apro.settings" -PathType Leaf) {
   $config = Get-Content .\apro.settings | Out-String | ConvertFrom-StringData

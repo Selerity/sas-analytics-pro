@@ -7,6 +7,13 @@
 SCRIPT_ROOT=$(dirname $0)
 cd ${SCRIPT_ROOT}
 
+# Check that docker is running
+DOCKER_STATUS=$(docker version 2>&1 > /dev/null)
+if [[ $? > 0 ]]; then
+  echo "ERROR: A running docker client is required to use this software.  Please install or start your instance of Docker before proceeding."
+  exit 1
+fi
+
 # Ensure that apro.settings file is present
 if [[ -f apro.settings ]]; then
   source apro.settings
@@ -105,4 +112,4 @@ RUN_ARGS="
 ${JUPYTERLAB_ARGS}"
 
 # Run Analytics Pro container with supplied arguments
-docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
+echo docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
