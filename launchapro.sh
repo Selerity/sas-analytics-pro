@@ -19,9 +19,17 @@ if [[ -f apro.settings ]]; then
   source apro.settings
 
   if [[ -n "${1}" && ${1} == *"--batch"* ]]; then
+    BATCH_MODE="true"
     SAS_RUN_HTTPD="false"
+    $NAME=""
   else
+    BATCH_MODE="false"
     SAS_RUN_HTTPD="true"
+    NAME="sas-analytics-pro"
+    if [[ "$(docker inspect --format='{{.State.Status}}' sas-analytics-pro 2>&1)" == "running" ]]; then
+      echo "ERROR: SAS Analytics Pro is already running."
+      exit 1
+    fi
   fi
 
   if [[ -z "${RUN_MODE}" ]]; then
@@ -112,4 +120,70 @@ RUN_ARGS="
 ${JUPYTERLAB_ARGS}"
 
 # Run Analytics Pro container with supplied arguments
-docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
+CONTAINER=$(docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}")
+
+# Check if there were any problems with the launch
+if [[ $? > 0 ]]; then
+  echo "ERROR: Something went wrong trying to launch SAS Analytics Pro. Please refer to the documentation."
+  exit 1
+fi
+
+if [[ ${BATCH_MODE} == "true" ]]; then
+  echo "############################################"
+  echo "#    SAS Analytic Pro Personal Launcher    #"
+  echo "#------------------------------------------#"
+  echo "# Batch Mode                               #"
+  echo "############################################"
+  CONTAINER_NAME=$(docker inspect --format='{{.Name}}' ${CONTAINER})
+  echo "Name: ${CONTAINER_NAME}"
+else
+  # Monitor SAS Analytics Pro as it starts up
+  echo "############################################"
+  echo "#    SAS Analytic Pro Personal Launcher    #"
+  echo "#------------------------------------------#"
+  echo "# S = SAS Studio has started               #"
+  if [[ ${JUPYTERLAB} == "true" ]]; then
+    echo "# J = Jupyter Lab has started              #"
+  fi
+  echo "############################################"
+  echo -n "."
+  TIMING="5 5 5 5 10 10 30 30 30 60"
+  for _check in ${TIMING}; do
+    sleep ${_check}
+    APRO_PASSWORD=${APRO_PASSWORD:-$(docker logs $CONTAINER 2>&1 | grep ^Password=)}
+    STUDIO_START=${STUDIO_START:-$(docker logs $CONTAINER 2>&1 | grep "service Root WebApplicationContext: initialization completed")}
+    if [[ ${JUPYTERLAB} == "true" ]]; then
+      JUPYTER_START=${JUPYTER_START:-$(docker logs $CONTAINER 2>&1 | grep "Jupyter Server ")}
+    fi
+
+    echo -n "."
+
+    if [[ ! -z ${STUDIO_START} ]]; then
+      # SAS Studio has started
+      if [[ -z ${STUDIO_FLAG} ]]; then 
+        echo -n "S"
+        STUDIO_FLAG=1
+      fi
+      if [[ ${JUPYTERLAB} == "true" ]]; then
+        if [[ ! -z ${JUPYTER_START} ]]; then
+          # Jupyter Lab has started
+          echo -e "J"
+          break
+        fi
+      else
+        break
+      fi
+    fi
+  done
+
+  if [[ -z ${STUDIO_START} ]]; then
+    echo "WARNING: Cloud not detect startup of SAS Studio.  Please manually check status with \"docker logs sas-analytics-pro\""
+    exit 1
+  fi
+
+  if [[ ! -z ${APRO_PASSWORD} ]]; then
+    echo ${APRO_PASSWORD}
+  fi
+
+  echo -e "To stop your SAS Analytics Pro instance, use \"docker stop sas-analytics-pro\"\n"
+fi
