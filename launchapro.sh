@@ -8,7 +8,7 @@ SCRIPT_ROOT=$(dirname $0)
 cd ${SCRIPT_ROOT}
 
 # determine host operating system
-HOST_OS=$(uname|tr '[:upper:]' '[:lower:]')
+HOST_OS=$(uname|tr '[:lower:]' '[:upper:]')
 
 # Ensure that apro.settings file is present
 if [[ -f apro.settings ]]; then
