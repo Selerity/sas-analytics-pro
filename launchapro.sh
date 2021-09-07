@@ -13,14 +13,30 @@ fi
 # determine host operating system
 HOST_OS=$(uname|tr '[:lower:]' '[:upper:]')
 
+# Check that docker is running
+if ! docker version > /dev/null 2>&1; then
+  echo "ERROR: A running docker client is required to use this software.  Please install or start your instance of Docker before proceeding."
+  exit 1
+fi
+
 # Ensure that apro.settings file is present
 if [[ -f apro.settings ]]; then
   source apro.settings
 
   if [[ -n "${1}" && ${1} == *"--batch"* ]]; then
+    BATCH_MODE="true"
     SAS_RUN_HTTPD="false"
+    NAME=""
+    STUDIO=""
   else
+    BATCH_MODE="false"
     SAS_RUN_HTTPD="true"
+    STUDIO="--publish ${STUDIO_HTTP_PORT}:80"
+    NAME="--name=sas-analytics-pro"
+    if [[ "$(docker inspect --format='{{.State.Status}}' sas-analytics-pro 2>&1)" == "running" ]]; then
+      echo "ERROR: SAS Analytics Pro is already running."
+      exit 1
+    fi
   fi
 
   if [[ -z "${RUN_MODE}" ]]; then
@@ -96,7 +112,7 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
 fi
 
 # Jupyter Lab
-if [[ ${JUPYTERLAB} == "true" ]]; then
+if [[ "${JUPYTERLAB}" == "true" && "${BATCH_MODE}" == "false" ]]; then
   JUPYTERLAB_ARGS="--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ${JUPYTERLAB_HTTP_PORT}:8888"
 else
   JUPYTERLAB_ARGS=""
@@ -104,7 +120,7 @@ fi
 
 # Create runtime arugments
 RUN_ARGS="
---name=sas-analytics-pro
+${NAME}
 --rm
 --detach
 --hostname sas-analytics-pro
@@ -116,11 +132,78 @@ RUN_ARGS="
 --env SAS_DEMO_USER
 --env SASLOCKDOWN
 --env SASV9_OPTIONS
---publish ${STUDIO_HTTP_PORT}:80
+${STUDIO}
 --volume ${PWD}/sasinside:/sasinside
 --volume ${PWD}/python:/python
 --volume ${PWD}/data:/data
 ${JUPYTERLAB_ARGS}"
 
 # Run Analytics Pro container with supplied arguments
-docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}"
+CONTAINER=$(docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}")
+
+# Check if there were any problems with the launch
+if [[ $? > 0 ]]; then
+  echo "ERROR: Something went wrong trying to launch SAS Analytics Pro. Please refer to the documentation."
+  exit 1
+fi
+
+if [[ ${BATCH_MODE} == "true" ]]; then
+  echo "#############################################"
+  echo "#    SAS Analytics Pro Personal Launcher    #"
+  echo "#-------------------------------------------#"
+  echo "# Batch Mode                                #"
+  echo "#############################################"
+  CONTAINER_NAME=$(docker inspect --format='{{.Name}}' ${CONTAINER})
+  echo "Name: ${CONTAINER_NAME}"
+else
+  # Monitor SAS Analytics Pro as it starts up
+  echo "#############################################"
+  echo "#    SAS Analytics Pro Personal Launcher    #"
+  echo "#-------------------------------------------#"
+  echo "# S = SAS Studio has started                #"
+  if [[ ${JUPYTERLAB} == "true" ]]; then
+    echo "# J = Jupyter Lab has started               #"
+  fi
+  echo "#############################################"
+  echo -n "."
+  TIMING="5 5 5 5 10 10 30 30 30 60"
+  for _check in ${TIMING}; do
+    sleep ${_check}
+    DOCKER_LOGS="$(docker logs "${CONTAINER}" 2>&1)"
+    APRO_PASSWORD=${APRO_PASSWORD:-$(grep ^Password= <<< "${DOCKER_LOGS}")}
+    STUDIO_START=${STUDIO_START:-$(grep "service Root WebApplicationContext: initialization completed" <<< "${DOCKER_LOGS}")}
+    if [[ ${JUPYTERLAB} == "true" ]]; then
+      JUPYTER_START=${JUPYTER_START:-$(grep "Jupyter Server " <<< "${DOCKER_LOGS}")}
+    fi
+
+    echo -n "."
+
+    if [[ -n ${STUDIO_START} ]]; then
+      # SAS Studio has started
+      if [[ -z ${STUDIO_FLAG} ]]; then 
+        echo -n "S"
+        STUDIO_FLAG=1
+      fi
+      if [[ ${JUPYTERLAB} == "true" ]]; then
+        if [[ -n ${JUPYTER_START} ]]; then
+          # Jupyter Lab has started
+          echo -n "J"
+          break
+        fi
+      else
+        break
+      fi
+    fi
+  done
+
+  if [[ -z ${STUDIO_START} ]]; then
+    echo "WARNING: Could not detect startup of SAS Studio.  Please manually check status with \"docker logs sas-analytics-pro\""
+    exit 1
+  fi
+
+  if [[ -n ${APRO_PASSWORD} ]]; then
+    echo -e "\n${APRO_PASSWORD}\n"
+  fi
+
+  echo -e "To stop your SAS Analytics Pro instance, use \"docker stop sas-analytics-pro\"\n"
+fi
