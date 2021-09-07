@@ -199,5 +199,5 @@ if ( $config.BATCH_MODE -eq 'true' ) {
     Write-Host "`n" $apro_password
   }
 
-  Write-Host "To stop your SAS Analytics Pro instance, use ""docker stop sas-analytics-pro"" `n"
+  Write-Host "`n`To stop your SAS Analytics Pro instance, use ""docker stop sas-analytics-pro"" `n"
 }
