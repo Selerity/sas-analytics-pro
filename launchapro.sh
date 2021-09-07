@@ -8,8 +8,7 @@ SCRIPT_ROOT=$(dirname $0)
 cd ${SCRIPT_ROOT}
 
 # Check that docker is running
-DOCKER_STATUS=$(docker version 2>&1 > /dev/null)
-if [[ $? > 0 ]]; then
+if ! docker version > /dev/null 2>&1; then
   echo "ERROR: A running docker client is required to use this software.  Please install or start your instance of Docker before proceeding."
   exit 1
 fi
