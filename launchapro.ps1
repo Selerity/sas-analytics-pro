@@ -67,6 +67,8 @@ if ($config.SASLICENSEFILE -eq $null) {
   Write-Host "ERROR: Could not locate SAS license file."
   Exit 1
 }
+# Copy found license to sasinside directory
+Copy-Item $config.SASLICENSEFILE -Destination ".\sasinside\"
 $env:SASLICENSEFILE = $config.SASLICENSEFILE.Name
 
 # Get latest certificate ZIP
