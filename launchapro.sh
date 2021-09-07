@@ -52,12 +52,12 @@ if [[ ! -d data ]]; then
 fi
 
 # Get latest license file, then move to sasinside/
-LINUX_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt" -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
-DARWIN_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViya4_*_license_*.jwt" -print0 | xargs -0 stat -f "%m %N" 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+LINUX_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_license_*.jwt" -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+DARWIN_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_license_*.jwt" -print0 | xargs -0 stat -f "%m %N" 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
 LICENSEFILE="${HOST_OS}_LICENSEFILE"
 # test that license file exists and we can copy it
 if [[ -n "${!LICENSEFILE}" ]]; then
-  if ! cp "${!LICENSEFILE}" "sasinside/${!LICENSEFILE##*/}"; then
+  if ! cp ${!LICENSEFILE} "sasinside/${!LICENSEFILE##*/}"; then
     echo "ERROR: Copying licence file failed."
     exit 1 
   fi
