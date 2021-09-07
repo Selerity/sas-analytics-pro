@@ -151,10 +151,11 @@ else
   TIMING="5 5 5 5 10 10 30 30 30 60"
   for _check in ${TIMING}; do
     sleep ${_check}
-    APRO_PASSWORD=${APRO_PASSWORD:-$(docker logs $CONTAINER 2>&1 | grep ^Password=)}
-    STUDIO_START=${STUDIO_START:-$(docker logs $CONTAINER 2>&1 | grep "service Root WebApplicationContext: initialization completed")}
+    DOCKER_LOGS="$(docker logs "${CONTAINER}" 2>&1)"
+    APRO_PASSWORD=${APRO_PASSWORD:-$(grep ^Password= <<< "${DOCKER_LOGS}")}
+    STUDIO_START=${STUDIO_START:-$(grep "service Root WebApplicationContext: initialization completed" <<< "${DOCKER_LOGS}")}
     if [[ ${JUPYTERLAB} == "true" ]]; then
-      JUPYTER_START=${JUPYTER_START:-$(docker logs $CONTAINER 2>&1 | grep "Jupyter Server ")}
+      JUPYTER_START=${JUPYTER_START:-$(grep "Jupyter Server " <<< "${DOCKER_LOGS}")}
     fi
 
     echo -n "."
@@ -168,7 +169,7 @@ else
       if [[ ${JUPYTERLAB} == "true" ]]; then
         if [[ -n ${JUPYTER_START} ]]; then
           # Jupyter Lab has started
-          echo -e "J"
+          echo -n "J"
           break
         fi
       else
@@ -183,7 +184,7 @@ else
   fi
 
   if [[ -n ${APRO_PASSWORD} ]]; then
-    echo ${APRO_PASSWORD}
+    echo -e "\n${APRO_PASSWORD}\n"
   fi
 
   echo -e "To stop your SAS Analytics Pro instance, use \"docker stop sas-analytics-pro\"\n"
