@@ -4,8 +4,14 @@
 # This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivitives License. To view a copy 
 # of the license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/
 
-SCRIPT_ROOT=$(dirname $0)
-cd ${SCRIPT_ROOT}
+# change to repo root directory
+if ! cd "$(dirname "${0}")"; then
+  echo "ERROR: Unable to change to root directory of repository."
+  exit 1
+fi
+
+# determine host operating system
+HOST_OS=$(uname|tr '[:lower:]' '[:upper:]')
 
 # Check that docker is running
 if ! docker version > /dev/null 2>&1; then
@@ -45,52 +51,64 @@ if [[ -f apro.settings ]]; then
   export SASLOCKDOWN
   export SASV9_OPTIONS
 else
-  echo "ERROR: apro.settings file not found"
+  echo "ERROR: apro.settings file not found."
   exit 1
 fi
 
 # Ensure that sasinside directory exists
 if [[ ! -d sasinside ]]; then
-  echo "ERROR: sasinside directory not found"
+  echo "ERROR: sasinside directory not found."
   exit 1
 fi
 
 # Ensure that data directory exists
 if [[ ! -d data ]]; then
-  echo "ERROR: data directory not found"
+  echo "ERROR: data directory not found."
   exit 1
 fi
 
-# Get latest license from sasinside directory
-SASLICENSEFILE=$(basename $(ls -r sasinside/*.jwt 2>/dev/null | head -1) 2>/dev/null)
-if [[ "x${SASLICENSEFILE}x" == "xx" ]]; then
-  echo "ERROR: Could not locate SAS license file in sasinside directory"
+# Get latest license file, then move to sasinside/
+LINUX_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_license_*.jwt" -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+DARWIN_LICENSEFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_license_*.jwt" -print0 | xargs -0 stat -f "%m %N" 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; print}')
+LICENSEFILE="${HOST_OS}_LICENSEFILE"
+# test that license file exists and we can copy it
+if [[ -n "${!LICENSEFILE}" ]]; then
+  if ! cp ${!LICENSEFILE} "sasinside/${!LICENSEFILE##*/}"; then
+    echo "ERROR: Copying licence file failed."
+    exit 1 
+  fi
+else
+  echo "ERROR: Could not locate SAS license file."
   exit 1
 fi
+
+# set SAS License file variable after tests have been run
+SASLICENSEFILE="${!LICENSEFILE##*/}"
 export SASLICENSEFILE
 
 # Get latest certificate ZIP
-SASCERTFILE=$(basename $(ls -r ./SASViyaV4_*_certs.zip 2>/dev/null | head -1) 2>/dev/null)
-if [[ "x${SASCERTFILE}x" == "xx" ]]; then
-  echo "ERROR: Could not locate SAS certificate file in current directory"
+LINUX_CERTFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_certs.zip" -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; sub(/^[ \t]+/, ""); print}')
+DARWIN_CERTFILE=$(find ~+ -maxdepth 1 -type f -iname "SASViyaV4_*_certs.zip" -print0 | xargs -0 stat -f "%m %N" 2>/dev/null | sort -nr | awk 'NR<=1 {$1=""; sub(/^[ \t]+/, ""); print}')
+SASCERTFILE="${HOST_OS}_CERTFILE"
+if [[ -z "${!SASCERTFILE}" ]]; then
+  echo "ERROR: Could not locate SAS certificate file."
   exit 1
 fi
+
 # Check if Docker has previously authenticate to cr.sas.com
 if ! grep -q cr.sas.com ~/.docker/config.json; then
   # Previous authentication not found, so we need to get login using mirrormgr
   echo "Previous login to the SAS Docker registry not found. Attempting to get login..."
-  case "$(uname)" in
-    "Linux")
-      MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/lax/mirrormgr-linux.tgz"
-      ;;
-    "Darwin")
-      MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/mac/mirrormgr-osx.tgz"
-      ;;
+  case "${HOST_OS}" in
+    "LINUX")  MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/lax/mirrormgr-linux.tgz" ;;
+    "DARWIN") MIRRORURL="https://support.sas.com/installation/viya/4/sas-mirror-manager/mac/mirrormgr-osx.tgz" ;;
   esac
+  
   # Download mirrormgr
   curl -s ${MIRRORURL} | tar xz mirrormgr
+  
   # Log into the SAS docker registry
-  eval $(./mirrormgr list remote docker login --deployment-data ${SASCERTFILE}) 2>&1 | grep -vi WARNING
+  eval "$(./mirrormgr list remote docker login --deployment-data "${!SASCERTFILE}") 2>&1 | grep -vi WARNING"
 fi
 
 # Jupyter Lab

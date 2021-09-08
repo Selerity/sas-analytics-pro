@@ -62,17 +62,19 @@ if (-Not(Test-Path -Path "data")) {
 }
 
 # Get latest license from sasinside directory
-$config.SASLICENSEFILE = Get-ChildItem .\sasinside -Filter "*.jwt" | Sort-Object -Descending
+$config.SASLICENSEFILE = Get-ChildItem . -Filter "SASViyaV4_*_license_*.jwt" | Sort-Object -Descending
 if ($config.SASLICENSEFILE -eq $null) {
-  Write-Host "ERROR: Could not locate SAS license file in sasinside directory"
+  Write-Host "ERROR: Could not locate SAS license file."
   Exit 1
 }
+# Copy found license to sasinside directory
+Copy-Item $config.SASLICENSEFILE -Destination ".\sasinside\"
 $env:SASLICENSEFILE = $config.SASLICENSEFILE.Name
 
 # Get latest certificate ZIP
 $config.SASCERTFILE = Get-ChildItem . -Filter "SASViyaV4_*_certs.zip" | Sort-Object -Descending
 if ($config.SASCERTFILE -eq $null) {
-  Write-Host "ERROR: Could not locate SAS certificates file in current directory"
+  Write-Host "ERROR: Could not locate SAS certificates file."
   Exit 1
 }
 # Check if Docker has previously authenticate to cr.sas.com
@@ -197,5 +199,5 @@ if ( $config.BATCH_MODE -eq 'true' ) {
     Write-Host "`n" $apro_password
   }
 
-  Write-Host "To stop your SAS Analytics Pro instance, use ""docker stop sas-analytics-pro"" `n"
+  Write-Host "`n`To stop your SAS Analytics Pro instance, use ""docker stop sas-analytics-pro"" `n"
 }
