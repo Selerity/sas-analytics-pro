@@ -28,3 +28,9 @@ Setting this value to `blank` (by deleting the value after the `=` sign) or `tru
 There are two ways you can set SAS System Options that you want to be applied at startup to your SAS environment - using this configuration setting or by providing a `sasv9_usermods.cfg` file in the `sasinside` directory.  Please note that some system options (such as `DLCREATEDIR`) shouldn't be applied at startup due to the readonly nature of the SAS filesystem (startup will fail because some SASHELP directories don't exist, and SAS will try to create them if `DLCREATEDIR` is in effect but it won't be able to because the file system is readonly).
 
 Our preference is to set system options using the `sasv9_usermods.cfg` file.
+
+## `JUPYTERLAB`
+If you would like to enable the Jupyter Lab interface then set this value to `true`.  This creates a virtual Python environment within the `python` sub directory of this repo, which is accessed via `/python` within the container.  Your Jupyter Lab environment will contain the SAS Kernel pre-configured against the SAS Analytics Pro environment. By default you will access Jupyter Lab using http://localhost:8888 and use you generated password to login.
+
+## `JUPYTERLAB_HTTP_PORT`
+This is the HTTP port you want the Jupyter Lab interface to use. This repo uses port `8888` by default.  If you leave the default in place then you will access Jupyter Lab using the URL `http://localhost:8888`.  When running on Linux you will need to pick a port over `1024`.
