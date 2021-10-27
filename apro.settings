@@ -6,7 +6,7 @@
 
 IMAGE=cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-analytics-pro
 # Docker Image version for SAS Analytics Pro
-IMAGE_VERSION=0.6.24-20210917.1631905997915
+IMAGE_VERSION=0.7.36-20211018.1634580897331
 
 # HTTP port to use
 STUDIO_HTTP_PORT=81
