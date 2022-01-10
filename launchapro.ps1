@@ -3,6 +3,10 @@
 # This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivitives License. To view a copy 
 # of the license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/
 
+Write-Host "#############################################"
+Write-Host "#    SAS Analytics Pro Personal Launcher    #"
+Write-Host "#-------------------------------------------#"
+
 $ScriptDir = Split-Path $script:MyInvocation.MyCommand.Path
 Set-Location -Path $ScriptDir
 
@@ -15,7 +19,7 @@ if ($LASTEXITCODE -gt 0) {
 
 # Ensure that apro.settings file is present
 if (Test-Path -Path ".\apro.settings" -PathType Leaf) {
-  $config = Get-Content .\apro.settings | Out-String | ConvertFrom-StringData
+  $config = (Get-Content .\apro.settings | Out-String) -replace '\\','\\' | ConvertFrom-StringData
   if ($args[0] -eq "--batch") {
     $config.SAS_RUN_HTTPD = "false"
     $config.BATCH_MODE = "true"
@@ -101,11 +105,55 @@ if (-Not (Select-String -Path $env:USERPROFILE\.docker\config.json -Pattern "cr.
 }
 
 # Jupyter Lab
-if ( $config.JUPYTERLAB -eq 'true' -And $config.BATCH_MODE -eq 'false' ) {
+if ( $config.JUPYTERLAB -eq $True -And $config.BATCH_MODE -eq 'false' ) {
+  Write-Host "# Add-on: JupyterLab Enabled                #"
   $jupyterlab_args = -join ("--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ", $config.JUPYTERLAB_HTTP_PORT, ":8888")
 } else {
   $jupyterlab_args = ""
 }
+
+# Clinical Standards Toolkit
+if ( $config.CST -eq $True ) {
+  Write-Host "# Add-on: CST Enabled                       #"
+  # Check that required files can be found in SAS 9.4 Depot
+  if ( (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True `
+       -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALLAX) -PathType Leaf) -eq $True `
+       -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLEGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLELAX) -PathType Leaf) -eq $True) {
+    # Prepare CST files
+    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTMACROSGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTBASE))
+    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALLAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLEGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLELAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+    # Fix SAS Macro code
+    Get-ChildItem -Path (-join ($pwd, "\addons\", $config.CSTMACROS)) |
+    Foreach-Object {
+      (Get-Content $_.FullName).replace('%sysevalf(&sysver)', '&sysver') | Set-Content $_.FullName
+
+    }
+    $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
+    $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+  } else {
+    # Depot cannot be found, but check if we already have the required files extracted
+    if ( (Test-Path -Path $(-join($pwd, "\addons\", $config.CSTGLOBAL, "/build/buildinfo.xml")) -PathType Leaf) -eq $True -And `
+         (Test-Path -Path $(-join($pwd, "\addons\", $config.CSTSAMPLE, "/build/buildinfo.xml")) -PathType Leaf) -eq $True -And `
+         (Test-Path -Path $(-join ($pwd, "\addons\", $config.CSTMACROS)) -PathType Container) -eq $True ) {
+          $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
+          $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+    } else {
+      Write-Host "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: " + $config.SAS94DEPOT
+      Exit 1
+    }   
+  }
+  $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
+  $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+} else {
+  $cst_args = ""
+}
+
+# Collect Add-Ons
+$addons = "$jupyterlab_args $cst_args"
+
 
 # Get Local Windows Drives
 $drives = [System.IO.DriveInfo]::GetDrives() | Where-Object { $_.DriveType -eq [System.IO.DriveType]::Fixed}
@@ -131,7 +179,7 @@ $config.STUDIO + " " +
 "--volume '$pwd\python:/python' " +
 "--volume '$pwd\data:/data' " +
 $windows_drives +
-$jupyterlab_args
+$addons
 
 $cmd = "docker run " + $run_args + " " + $config.IMAGE + ":" + $config.IMAGE_VERSION + " $args"
 
@@ -142,19 +190,13 @@ if ( $LASTEXITCODE -gt 0 ) {
   Exit 1
 }
 
-if ( $config.BATCH_MODE -eq 'true' ) {
-  Write-Host "#############################################"
-  Write-Host "#    SAS Analytics Pro Personal Launcher    #"
-  Write-Host "#-------------------------------------------#"
+if ( $config.BATCH_MODE -eq $True ) {
   Write-Host "# Batch Mode                                #"
   Write-Host "#############################################"
   $container_name = (docker inspect --format='{{.Name}}' $container)
   Write-Host "Name: " $container_name
 } else {
   # Monitor SAS Analytics Pro as it starts up
-  Write-Host "#############################################"
-  Write-Host "#    SAS Analytics Pro Personal Launcher    #"
-  Write-Host "#-------------------------------------------#"
   Write-Host "# S = SAS Studio has started                #"
   if ( $config.JUPYTERLAB -eq "true" ) {
     Write-Host "# J = Jupyter Lab has started               #"
@@ -178,7 +220,7 @@ if ( $config.BATCH_MODE -eq 'true' ) {
         Write-Host -NoNewLine "S"
         $studio_flag = 1
       }
-      if ( $config.JUPYTERLAB -eq 'true' ) {
+      if ( $config.JUPYTERLAB -eq $True ) {
         if ( -Not $jupyter_start -eq "" ) {
           # Jupyter Lab has started
           Write-Host -NoNewline "J"
@@ -195,8 +237,12 @@ if ( $config.BATCH_MODE -eq 'true' ) {
     Exit 1
   }
 
+  Write-Host "`n#############################################"
+  Write-Host "Browser Access: http://localhost:$env:STUDIO_HTTP_PORT"
+  Write-Host "User ID=$env:SAS_DEMO_USER"
+
   if ( -Not $null -eq $apro_password ) {
-    Write-Host "`n" $apro_password
+    Write-Host $apro_password
   }
 
   Write-Host "`n`To stop your SAS Analytics Pro instance, use ""docker stop sas-analytics-pro"" `n"
