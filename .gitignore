@@ -16,3 +16,5 @@ python
 *.ipynb
 __pycache__
 .ipython
+.DS_Store
+addons

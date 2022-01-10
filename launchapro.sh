@@ -4,6 +4,10 @@
 # This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivitives License. To view a copy 
 # of the license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/
 
+echo "#############################################"
+echo "#    SAS Analytics Pro Personal Launcher    #"
+echo "#-------------------------------------------#"
+
 # change to repo root directory
 if ! cd "$(dirname "${0}")"; then
   echo "ERROR: Unable to change to root directory of repository."
@@ -111,12 +115,51 @@ if ! grep -q cr.sas.com ~/.docker/config.json; then
   eval "$(./mirrormgr list remote docker login --deployment-data "${!SASCERTFILE}") 2>&1 | grep -vi WARNING"
 fi
 
+# Add-Ons
+ADDONS=""
+
 # Jupyter Lab
 if [[ "${JUPYTERLAB}" == "true" && "${BATCH_MODE}" == "false" ]]; then
+  echo "# Add-on: JupyterLab Enabled                #"
   JUPYTERLAB_ARGS="--env POST_DEPLOY_SCRIPT=/sasinside/jupyterlab.sh --publish ${JUPYTERLAB_HTTP_PORT}:8888"
 else
   JUPYTERLAB_ARGS=""
 fi
+
+# Clinical Standards Toolkit
+if [[ "${CST}" == "true" ]]; then
+  echo "# Add-on: CST Enabled                       #"
+  # Check that required files can be found in SAS 9.4 Depot
+  if [[ -f "${SAS94DEPOT}/${CSTMACROSGEN}" && 
+        -f "${SAS94DEPOT}/${CSTGLOBALGEN}" && -f "${SAS94DEPOT}/${CSTGLOBALLAX}" && 
+        -f "${SAS94DEPOT}/${CSTSAMPLEGEN}" && -f "${SAS94DEPOT}/${CSTSAMPLELAX}" ]]; then
+    # Prepare CST files
+    unzip -q -u "${SAS94DEPOT}/${CSTMACROSGEN}" -d ${PWD}/addons/${CSTBASE}
+    unzip -q -u "${SAS94DEPOT}/${CSTGLOBALGEN}" -d ${PWD}/addons/${CSTGLOBAL}
+    unzip -q -u "${SAS94DEPOT}/${CSTGLOBALLAX}" -d ${PWD}/addons/${CSTGLOBAL}
+    unzip -q -u "${SAS94DEPOT}/${CSTSAMPLEGEN}" -d ${PWD}/addons/${CSTSAMPLE}
+    unzip -q -u "${SAS94DEPOT}/${CSTSAMPLELAX}" -d ${PWD}/addons/${CSTSAMPLE}
+    # Fix SAS Macro code
+    sed -i '' 's/%sysevalf(&sysver)/&sysver/g' ${PWD}/addons/${CSTMACROS}/*
+
+    CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
+    SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
+  else
+    # Depot cannot be found, but check if we already have the required files extracted
+    if [[ -f "${PWD}/addons/${CSTGLOBAL}/build/buildinfo.xml" && -f "${PWD}/addons/${CSTSAMPLE}/build/buildinfo.xml" && -d "${PWD}/addons/${CSTMACROS}" ]]; then
+      CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
+      SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
+    else
+      echo "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: ${SAS94DEPOT}"
+      exit 1
+    fi
+  fi
+else
+  CST_ARGS=""
+fi
+
+# Collect Add-Ons
+ADDONS="${JUPYTERLAB_ARGS}  ${CST_ARGS}"
 
 # Create runtime arugments
 RUN_ARGS="
@@ -134,9 +177,9 @@ ${NAME}
 --env SASV9_OPTIONS
 ${STUDIO}
 --volume ${PWD}/sasinside:/sasinside
---volume ${PWD}/python:/python
 --volume ${PWD}/data:/data
-${JUPYTERLAB_ARGS}"
+--volume ${PWD}/addons/python:/python
+${ADDONS}"
 
 # Run Analytics Pro container with supplied arguments
 CONTAINER=$(docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}")
@@ -148,18 +191,12 @@ if [[ $? > 0 ]]; then
 fi
 
 if [[ ${BATCH_MODE} == "true" ]]; then
-  echo "#############################################"
-  echo "#    SAS Analytics Pro Personal Launcher    #"
-  echo "#-------------------------------------------#"
   echo "# Batch Mode                                #"
   echo "#############################################"
   CONTAINER_NAME=$(docker inspect --format='{{.Name}}' ${CONTAINER})
   echo "Name: ${CONTAINER_NAME}"
 else
   # Monitor SAS Analytics Pro as it starts up
-  echo "#############################################"
-  echo "#    SAS Analytics Pro Personal Launcher    #"
-  echo "#-------------------------------------------#"
   echo "# S = SAS Studio has started                #"
   if [[ ${JUPYTERLAB} == "true" ]]; then
     echo "# J = Jupyter Lab has started               #"
@@ -201,8 +238,13 @@ else
     exit 1
   fi
 
+  echo -e "\n#############################################"
+
+  echo "Browser Access: http://localhost:${STUDIO_HTTP_PORT}"
+  echo "User ID=${SAS_DEMO_USER}"
+
   if [[ -n ${APRO_PASSWORD} ]]; then
-    echo -e "\n${APRO_PASSWORD}\n"
+    echo -e "${APRO_PASSWORD}\n"
   fi
 
   echo -e "To stop your SAS Analytics Pro instance, use \"docker stop sas-analytics-pro\"\n"
