@@ -36,7 +36,7 @@ SAS94DEPOT=\\files\SASDepot\9.4_M7
 # Docker Image Repository and Tag (Version)   #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 IMAGE=cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-analytics-pro
-IMAGE_VERSION=0.8.28-20220107.1641577455247
+IMAGE_VERSION=0.9.25-20220107.1641578822369
 ###############################################
 
 ###############################################
@@ -83,4 +83,5 @@ CSTGLOBALLAX=products/cstgblstdlib__94120__prt__xx__sp0__1/native_lax.zip
 CSTSAMPLEGEN=products/cstsamplelib__94120__prt__xx__sp0__1/cstsamplelib_gen.zip
 CSTSAMPLELAX=products/cstsamplelib__94120__prt__xx__sp0__1/native_lax.zip
 CSTMACROSGEN=products/cstframework__94120__lax__en__sp0__1/en_sasautos.zip
+CSTHF=http://ftp.sas.com/techsup/download/hotfix/HF2/Z/Z50/Z50002/xx/prt/Z50002pt.zip
 ###############################################
