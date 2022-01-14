@@ -129,29 +129,53 @@ fi
 # Clinical Standards Toolkit
 if [[ "${CST}" == "true" ]]; then
   echo "# Add-on: CST Enabled                       #"
-  # Check that required files can be found in SAS 9.4 Depot
-  if [[ -f "${SAS94DEPOT}/${CSTMACROSGEN}" && 
-        -f "${SAS94DEPOT}/${CSTGLOBALGEN}" && -f "${SAS94DEPOT}/${CSTGLOBALLAX}" && 
-        -f "${SAS94DEPOT}/${CSTSAMPLEGEN}" && -f "${SAS94DEPOT}/${CSTSAMPLELAX}" ]]; then
-    # Prepare CST files
-    unzip -q -u "${SAS94DEPOT}/${CSTMACROSGEN}" -d ${PWD}/addons/${CSTBASE}
-    unzip -q -u "${SAS94DEPOT}/${CSTGLOBALGEN}" -d ${PWD}/addons/${CSTGLOBAL}
-    unzip -q -u "${SAS94DEPOT}/${CSTGLOBALLAX}" -d ${PWD}/addons/${CSTGLOBAL}
-    unzip -q -u "${SAS94DEPOT}/${CSTSAMPLEGEN}" -d ${PWD}/addons/${CSTSAMPLE}
-    unzip -q -u "${SAS94DEPOT}/${CSTSAMPLELAX}" -d ${PWD}/addons/${CSTSAMPLE}
-    # Fix SAS Macro code
-    sed -i '' 's/%sysevalf(&sysver)/&sysver/g' ${PWD}/addons/${CSTMACROS}/*
-
+  # Check if we already have the required files extracted
+  if [[ -f "${PWD}/addons/${CSTGLOBAL}/build/buildinfo.xml" && -f "${PWD}/addons/${CSTSAMPLE}/build/buildinfo.xml" && -d "${PWD}/addons/${CSTMACROS}" ]]; then
     CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
     SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
   else
-    # Depot cannot be found, but check if we already have the required files extracted
-    if [[ -f "${PWD}/addons/${CSTGLOBAL}/build/buildinfo.xml" && -f "${PWD}/addons/${CSTSAMPLE}/build/buildinfo.xml" && -d "${PWD}/addons/${CSTMACROS}" ]]; then
+    # Check that required files can be found in SAS 9.4 Depot
+    if [[ -f "${SAS94DEPOT}/${CSTMACROSGEN}" && 
+          -f "${SAS94DEPOT}/${CSTGLOBALGEN}" && -f "${SAS94DEPOT}/${CSTGLOBALLAX}" && 
+          -f "${SAS94DEPOT}/${CSTSAMPLEGEN}" && -f "${SAS94DEPOT}/${CSTSAMPLELAX}" ]]; then
+      # Prepare CST files
+      unzip -q -u "${SAS94DEPOT}/${CSTMACROSGEN}" -d ${PWD}/addons/${CSTBASE}
+      unzip -q -u "${SAS94DEPOT}/${CSTGLOBALGEN}" -d ${PWD}/addons/${CSTGLOBAL}
+      unzip -q -u "${SAS94DEPOT}/${CSTGLOBALLAX}" -d ${PWD}/addons/${CSTGLOBAL}
+      unzip -q -u "${SAS94DEPOT}/${CSTSAMPLEGEN}" -d ${PWD}/addons/${CSTSAMPLE}
+      unzip -q -u "${SAS94DEPOT}/${CSTSAMPLELAX}" -d ${PWD}/addons/${CSTSAMPLE}
+      # Fix SAS Macro code
+      sed -i '' 's/%sysevalf(&sysver)/&sysver/g' ${PWD}/addons/${CSTMACROS}/*
+
       CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
       SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
+      echo "# Add-on: CST prepared                      #"
     else
-      echo "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: ${SAS94DEPOT}"
-      exit 1
+      # Check if we can download the CST
+      curl -Ifs ${CSTHF} > /dev/null
+      if [ $? == 0 ]; then
+        CSTDL=$(mktemp)
+        echo "# Add-on: CST being downloaded from SAS     #"
+        curl ${CSTHF} -o ${CSTDL}
+        unzip -q -u ${CSTDL} -d ${PWD}/addons/${CSTBASE}/source
+        rm -f ${CSTDL}
+        # Prepare CST files
+        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstframework__Z46002__lax__en__sp0__1/en_sasautos.zip" -d ${PWD}/addons/${CSTBASE}
+        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstgblstdlib__Z48002__prt__xx__sp0__1/cstgblstdlib_gen.zip" -d ${PWD}/addons/${CSTGLOBAL}
+        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstgblstdlib__Z48002__prt__xx__sp0__1/native_lax.zip" -d ${PWD}/addons/${CSTGLOBAL}
+        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstsamplelib__Z49002__prt__xx__sp0__1/cstsamplelib_gen.zip" -d ${PWD}/addons/${CSTSAMPLE}
+        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstsamplelib__Z49002__prt__xx__sp0__1/native_lax.zip" -d ${PWD}/addons/${CSTSAMPLE}
+        rm -Rf "${PWD}/addons/${CSTBASE}/source"
+        # Fix SAS Macro code
+        sed -i '' 's/%sysevalf(&sysver)/&sysver/g' ${PWD}/addons/${CSTMACROS}/*
+
+        CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
+        SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
+        echo "# Add-on: CST prepared                      #"
+      else
+        echo "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found, and files are not available from SAS for download."
+        exit 1
+      fi
     fi
   fi
 else

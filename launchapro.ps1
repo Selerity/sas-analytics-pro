@@ -91,7 +91,7 @@ if (-Not (Select-String -Path $env:USERPROFILE\.docker\config.json -Pattern "cr.
   #download
   Invoke-WebRequest -OutFile $tmp "https://support.sas.com/installation/viya/4/sas-mirror-manager/wx6/mirrormgr-windows.zip"
   # Create temp directory
-  $mirrormgr_dir = New-Item -ItemType "directory" -Path "$env:TEMP\mirrormgr"
+  $mirrormgr_dir = New-Item -ItemType "directory" -Path "$env:TEMP\mirrormgr" -Force
   #exract to same folder 
   $tmp | Expand-Archive -DestinationPath $mirrormgr_dir -Force
   # remove temporary file
@@ -115,38 +115,70 @@ if ( $config.JUPYTERLAB -eq $True -And $config.BATCH_MODE -eq 'false' ) {
 # Clinical Standards Toolkit
 if ( $config.CST -eq $True ) {
   Write-Host "# Add-on: CST Enabled                       #"
-  # Check that required files can be found in SAS 9.4 Depot
-  if ( (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True `
-       -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALLAX) -PathType Leaf) -eq $True `
-       -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLEGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLELAX) -PathType Leaf) -eq $True) {
-    # Prepare CST files
-    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTMACROSGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTBASE))
-    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
-    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALLAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
-    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLEGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
-    Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLELAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
-    # Fix SAS Macro code
-    Get-ChildItem -Path (-join ($pwd, "\addons\", $config.CSTMACROS)) |
-    Foreach-Object {
-      (Get-Content $_.FullName).replace('%sysevalf(&sysver)', '&sysver') | Set-Content $_.FullName
-
-    }
-    $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
-    $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+  # Check if we already have the required files extracted
+  if ( (Test-Path -Path $(-join($pwd, "\addons\", $config.CSTGLOBAL, "/build/buildinfo.xml")) -PathType Leaf) -eq $True -And `
+        (Test-Path -Path $(-join($pwd, "\addons\", $config.CSTSAMPLE, "/build/buildinfo.xml")) -PathType Leaf) -eq $True -And `
+        (Test-Path -Path $(-join ($pwd, "\addons\", $config.CSTMACROS)) -PathType Container) -eq $True ) {
+        $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
+        $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
   } else {
-    # Depot cannot be found, but check if we already have the required files extracted
-    if ( (Test-Path -Path $(-join($pwd, "\addons\", $config.CSTGLOBAL, "/build/buildinfo.xml")) -PathType Leaf) -eq $True -And `
-         (Test-Path -Path $(-join($pwd, "\addons\", $config.CSTSAMPLE, "/build/buildinfo.xml")) -PathType Leaf) -eq $True -And `
-         (Test-Path -Path $(-join ($pwd, "\addons\", $config.CSTMACROS)) -PathType Container) -eq $True ) {
-          $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
-          $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+    # Check that required files can be found in SAS 9.4 Depot
+    if ( (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True `
+        -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALLAX) -PathType Leaf) -eq $True `
+        -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLEGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLELAX) -PathType Leaf) -eq $True) {
+      # Prepare CST files
+      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTMACROSGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTBASE))
+      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALLAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLEGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLELAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+      # Fix SAS Macro code
+      Get-ChildItem -Path (-join ($pwd, "\addons\", $config.CSTMACROS)) |
+      Foreach-Object {
+        (Get-Content $_.FullName).replace('%sysevalf(&sysver)', '&sysver') | Set-Content $_.FullName
+
+      }
+      $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
+      $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+      Write-Host "# Add-on: CST prepared                      #"
     } else {
-      Write-Host "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: " + $config.SAS94DEPOT
-      Exit 1
-    }   
+      # Download the CST
+      # create temp with zip extension (or Expand will complain)
+      $tmp = New-TemporaryFile | Rename-Item -NewName { $_ -replace 'tmp$', 'zip' } -PassThru
+      #download
+      Write-Host "# Add-on: CST being downloaded from SAS     #"
+      Invoke-WebRequest -OutFile $tmp $config.CSTHF
+      # Create temp directory
+      $cst_dir = New-Item -ItemType "directory" -Path "$env:TEMP\cstsource" -Force
+      #exract to same folder 
+      $tmp | Expand-Archive -DestinationPath $cst_dir -Force
+      # remove temporary file
+      $tmp | Remove-Item
+
+      if ( (Test-Path -Path $($cst_dir.FullName + "\products") -PathType Container) -eq $True ) {
+
+        # Prepare CST files
+        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstframework__Z46002__lax__en__sp0__1/en_sasautos.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTBASE))
+        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstgblstdlib__Z48002__prt__xx__sp0__1/cstgblstdlib_gen.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstgblstdlib__Z48002__prt__xx__sp0__1/native_lax.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstsamplelib__Z49002__prt__xx__sp0__1/cstsamplelib_gen.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstsamplelib__Z49002__prt__xx__sp0__1/native_lax.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+        $cst_dir | Remove-Item -Recurse -Force
+        # Fix SAS Macro code
+        Get-ChildItem -Path (-join ($pwd, "\addons\", $config.CSTMACROS)) |
+        Foreach-Object {
+          (Get-Content $_.FullName).replace('%sysevalf(&sysver)', '&sysver') | Set-Content $_.FullName
+
+        }
+        $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
+        $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+        Write-Host "# Add-on: CST prepared                      #"
+      } else {
+        Write-Host "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: " $config.SAS94DEPOT
+        Exit 1
+      }
+    }
   }
-  $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
-  $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
 } else {
   $cst_args = ""
 }
