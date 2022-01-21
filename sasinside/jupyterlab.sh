@@ -7,8 +7,8 @@ python3 -mvenv /python/
 source /python/bin/activate
 pip install --upgrade pip
 echo "Installing Jupyter Lab and SAS Kernel"
-pip install wheel
-pip install pandas jupyterlab ipykernel sas_kernel
+pip install --upgrade wheel
+pip install --upgrade pandas jupyterlab ipykernel sas_kernel
 echo "Starting Jupyter Lab"
 existing_pw=$(awk '{print $5}' authinfo.txt)
 python -m jupyter_server.auth password ${existing_pw}

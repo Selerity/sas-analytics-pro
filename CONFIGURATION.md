@@ -11,18 +11,19 @@ This is the location of the SAS Analytics Pro docker image. The default value fo
 ## `IMAGE_VERSION`
 This is the docker tag and equates to the docker image version. The following list shows the equivalent docker tag for each SAS Analytics Pro relase:
 
-| SAS Analytics Pro Release | Docker Tag |
-| --- | --- |
-| 2021.1.4 | 0.5.112-20210816.1629112810612 |
-| 2021.1.5 | 0.6.24-20210917.1631905997915 |
-| 2021.1.6 | 0.7.36-20211018.1634580897331 |
-|          | 0.7.41-20211222.1640193731639 |
-|          | 0.7.42-20220107.1641575975534 |
-| 2021.2   | 0.8.27-20211115.1636974335897 |
-| 2021.2.1 | 0.8.27-20211115.1636974335897 |
-|          | 0.8.28-20220107.1641577455247 |
-| 2021.2.2(?) | 0.9.24-20211217.1639784757479 |
-|          | 0.9.25-20220107.1641578822369 |
+| SAS Analytics Pro Release | Date | Docker Tag |
+| --- | --- | --- |
+| 2021.1.4 | Augst 2021 | 0.5.112-20210816.1629112810612 |
+| 2021.1.5 | September 2021 | 0.6.24-20210917.1631905997915 |
+| 2021.1.6 | October 2021 | 0.7.36-20211018.1634580897331 |
+|          | December 2021 | 0.7.41-20211222.1640193731639 |
+|          | January 2022 | 0.7.42-20220107.1641575975534 |
+| 2021.2   | November 2021 | 0.8.27-20211115.1636974335897 |
+| 2021.2.1 | November 2021 | 0.8.27-20211115.1636974335897 |
+|          | January 2022 | 0.8.28-20220107.1641577455247 |
+| 2021.2.2 | December 2021 | 0.9.24-20211217.1639784757479 |
+|          | January 2022 | 0.9.25-20220107.1641578822369 |
+| 2021.2.3 | January 2022 | 0.10.25-20220114.1642157035956 |
 
 ## `JUPYTERLAB`
 If you would like to enable the Jupyter Lab interface then set this value to `true`.  This creates a virtual Python environment within the `python` sub directory of this repo, which is accessed via `/python` within the container.  Your Jupyter Lab environment will contain the SAS Kernel pre-configured against the SAS Analytics Pro environment. By default you will access Jupyter Lab using http://localhost:8888 and use you generated password to login.
@@ -30,6 +31,8 @@ If you would like to enable the Jupyter Lab interface then set this value to `tr
 ## `JUPYTERLAB_HTTP_PORT`
 This is the HTTP port you want the Jupyter Lab interface to use. This repo uses port `8888` by default.  If you leave the default in place then you will access Jupyter Lab using the URL `http://localhost:8888`.  When running on Linux you will need to pick a port over `1024`.
 
+## `PERL`
+Setting this value to `true` will add the _Perl for SAS_ package previously provided with SAS 9.4 to your environment.  The first time the launcher is run with this enabled you must provide the location of your SAS 9.4 Depot in the `SAS94DEPOT` option.  If you run the launcher in **SAS OQ Mode** (using the `--sasoq` parameter) this value is automatically set to `true`.
 ## `SAS_DEBUG`
 Setting this value to anything greater than `0` will cause SAS to show extra debug information in the log available using the `docker logs` command.
 
@@ -37,7 +40,7 @@ Setting this value to anything greater than `0` will cause SAS to show extra deb
 This sets the user ID you will use to log into SAS Studio with.  If you set this value to `blank` (by deleting the value after the `=` sign) this will default to `sasdemo`.  This repo attempts to re-use the user name you have already logged into you machine with. e.g. if you log into your PC with the user name `michael` then you will also be able to log into SAS Studio using that same user name (_but SAS Studio will use a different password - which is available using the main instructions_).
 
 ## `SAS94DEPOT`
-This option is used to locate your SAS 9.4 Depot when using the Clinical Standards Toolkit.  This can be a local or UNC path to your SAS 9.4 Depot.
+This option is used to locate your SAS 9.4 Depot which is required for various addons.  This can be a local or UNC path to your SAS 9.4 Depot. This value must be set to a valid SAS 9.4 Depot location when using **SAS OQ Mode**.
 
 ## `SASLOCKDOWN`
 Setting this value to `blank` (by deleting the value after the `=` sign) or `true` will cause your environment to be in [Lockdown mode](https://documentation.sas.com/doc/en/sasadmincdc/v_017/calsrvpgm/p04d9diqt9cjqnn1auxc3yl1ifef.htm?homeOnFail).  By setting this value to `false` your environment _will not_ be in Lockdown mode.

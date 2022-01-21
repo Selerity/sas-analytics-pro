@@ -25,7 +25,20 @@ if (Test-Path -Path ".\apro.settings" -PathType Leaf) {
     $config.BATCH_MODE = "true"
     $config.NAME = ""
     $config.STUDIO = ""
+    $config.SASOQ = $False
+  } elseif ($args[0] -eq "--sasoq") {
+    if ( -Not $args[1] ) {
+      Write-Host "ERROR: When SAS OQ is enabled you must specify test parameters."
+      Exit 1
+    }
+    $config.SAS_RUN_HTTPD = "false"
+    $config.BATCH_MODE = "true"
+    $config.NAME = ""
+    $config.STUDIO = ""
+    $config.SASOQ = $True
+    $config.PERL = $True
   } else {
+    $config.SASOQ = $False
     $config.SAS_RUN_HTTPD = "true"
     $config.BATCH_MODE = "false"
     $config.STUDIO = "--publish " + $config.STUDIO_HTTP_PORT + ":80 "
@@ -183,9 +196,46 @@ if ( $config.CST -eq $True ) {
   $cst_args = ""
 }
 
-# Collect Add-Ons
-$addons = "$jupyterlab_args $cst_args"
+# Perl for SAS
+if ( $config.PERL -eq $True ) {
+  Write-Host "# Add-on: Perl Enabled                      #"
+  # Check if we already have the required files extracted
+  if ( (Test-Path -Path $(-join($pwd, "\addons\perl\bin\perl5")) -PathType Leaf) -eq $True ) {
+        $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
+        $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
+  } else {
+    # Check that required files can be found in SAS 9.4 Depot
+    if ( (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.PERLFORSAS) -PathType Leaf) -eq $True ) {
+      # Prepare Perl for SAS files
+      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.PERLFORSAS)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\perl"))
 
+      $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
+      $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
+      Write-Host "# Add-on: Perl prepared                     #"
+    } else {
+      Write-Host "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: " $config.SAS94DEPOT
+      Exit 1
+    }
+  }
+} else {
+  $perl_args = ""
+}
+
+# SAS Operational Qualification
+if ( $config.SASOQ -eq $True ) {
+  Write-Host "# SAS OQ Mode                               #"
+  $entrypoint="--entrypoint /addons/sasoq/sasoq.sh"
+  $sasoq_args = -join (" --volume '", $pwd, "\addons\sasoq", ":/addons/sasoq'")
+} else {
+  $entrypoint=""
+  $sasoq_args = ""
+}
+
+# Collect Add-Ons
+$addons = "$jupyterlab_args $cst_args $perl_args $sasoq_args"
+
+# Collect Pre Deploy Commands
+$env:PRE_DEPLOY_SCRIPT = $config.PRE_DEPLOY_SCRIPT + "`n" + $perl_predeploy
 
 # Get Local Windows Drives
 $drives = [System.IO.DriveInfo]::GetDrives() | Where-Object { $_.DriveType -eq [System.IO.DriveType]::Fixed}
@@ -206,6 +256,7 @@ $config.NAME + " " +
 "--env SAS_DEMO_USER " +
 "--env SASLOCKDOWN " +
 "--env SASV9_OPTIONS " +
+"--env PRE_DEPLOY_SCRIPT " +
 $config.STUDIO + " " +
 "--volume '$pwd\sasinside:/sasinside' " +
 "--volume '$pwd\python:/python' " +
@@ -213,7 +264,7 @@ $config.STUDIO + " " +
 $windows_drives +
 $addons
 
-$cmd = "docker run " + $run_args + " " + $config.IMAGE + ":" + $config.IMAGE_VERSION + " $args"
+$cmd = "docker run " + $entrypoint + " " + $run_args + " " + $config.IMAGE + ":" + $config.IMAGE_VERSION + " $args" -replace "--sasoq",""
 
 $container=(Invoke-Expression $cmd)
 
@@ -222,7 +273,13 @@ if ( $LASTEXITCODE -gt 0 ) {
   Exit 1
 }
 
-if ( $config.BATCH_MODE -eq $True ) {
+if ( $config.SASOQ -eq $True ) {
+  Write-Host "# Streaming OQ Logs                         #"
+  Write-Host "#############################################"
+  $container_name = (docker inspect --format='{{.Name}}' $container)
+  Write-Host "Name: " $container_name
+  Invoke-Expression ("docker logs " + $container_name + " -f")
+} elseif ( $config.BATCH_MODE -eq $True ) {
   Write-Host "# Batch Mode                                #"
   Write-Host "#############################################"
   $container_name = (docker inspect --format='{{.Name}}' $container)
@@ -271,6 +328,9 @@ if ( $config.BATCH_MODE -eq $True ) {
 
   Write-Host "`n#############################################"
   Write-Host "Browser Access: http://localhost:$env:STUDIO_HTTP_PORT"
+  if ( $config.JUPYTERLAB -eq $True ) {
+    Write-Host "JupyterLab: http://localhost:$config.JUPYTERLAB_HTTP_PORT"
+  }
   Write-Host "User ID=$env:SAS_DEMO_USER"
 
   if ( -Not $null -eq $apro_password ) {

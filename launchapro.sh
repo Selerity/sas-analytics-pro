@@ -27,12 +27,28 @@ fi
 if [[ -f apro.settings ]]; then
   source apro.settings
 
-  if [[ -n "${1}" && ${1} == *"--batch"* ]]; then
+  if [[ -n "${1}" && ${1} == "--batch" ]]; then
+    ARGS="${@}"
     BATCH_MODE="true"
     SAS_RUN_HTTPD="false"
     NAME=""
     STUDIO=""
+    SASOQ="false"
+  elif [[ -n "${1}" && ${1} == "--sasoq" ]]; then
+    if [[ "${2}" == "" ]]; then
+      echo "ERROR: When SAS OQ is enabled you must specify test paramters."
+      exit 1
+    fi
+    SASOQ="true"
+    ARGS="${2}"
+    PERL="true"
+    BATCH_MODE="true"
+    SAS_RUN_HTTPD="false"
+    NAME=""
+    STUDIO=""    
   else
+    ARGS="${@}"
+    SASOQ="false"
     BATCH_MODE="false"
     SAS_RUN_HTTPD="true"
     STUDIO="--publish ${STUDIO_HTTP_PORT}:80"
@@ -54,6 +70,7 @@ if [[ -f apro.settings ]]; then
   export SAS_DEMO_USER
   export SASLOCKDOWN
   export SASV9_OPTIONS
+  export PRE_DEPLOY_SCRIPT
 else
   echo "ERROR: apro.settings file not found."
   exit 1
@@ -182,8 +199,46 @@ else
   CST_ARGS=""
 fi
 
+# Perl for SAS
+if [[ "${PERL}" == "true" ]]; then
+  echo "# Add-on: Perl Enabled                      #"
+  # Check if we already have the required files extracted
+  if [[ -f "${PWD}/addons/perl/bin/perl5" ]]; then
+    PERL_ARGS="--volume ${PWD}/addons/perl:/opt/sas/viya/home/SASFoundation/perl"
+    PERL_PREDEPLOY="chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
+  else
+    # Check that required files can be found in SAS 9.4 Depot
+    if [[ -f "${SAS94DEPOT}/${PERLFORSAS}" ]]; then
+      # Prepare Perl for SAS files
+      unzip -q -u "${SAS94DEPOT}/${PERLFORSAS}" -d ${PWD}/addons/perl
+
+      PERL_ARGS="--volume ${PWD}/addons/perl:/opt/sas/viya/home/SASFoundation/perl"
+      PERL_PREDEPLOY="chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
+      echo "# Add-on: Perl prepared                     #"
+    else
+      echo "ERROR: PERL=true but required files from SAS 9.4 Depot cannot be found."
+      exit 1
+    fi
+  fi
+else
+  PERL_ARGS=""
+fi
+
+# SAS Operational Qualification
+if [[ "${SASOQ}" == "true" ]]; then
+  echo "# SAS OQ Mode                               #"
+  ENTRYPOINT="--entrypoint /addons/sasoq/sasoq.sh"
+  SASOQ_ARGS="--volume ${PWD}/addons/sasoq:/addons/sasoq"
+else
+  ENTRYPOINT=""
+fi
+
 # Collect Add-Ons
-ADDONS="${JUPYTERLAB_ARGS}  ${CST_ARGS}"
+ADDONS="${JUPYTERLAB_ARGS}  ${CST_ARGS} ${PERL_ARGS} ${SASOQ_ARGS}"
+
+# Collect Pre Deploy Commands
+PRE_DEPLOY_SCRIPT="echo $(date);${PRE_DEPLOY_SCRIPT}
+${PERL_PREDEPLOY}"
 
 # Create runtime arugments
 RUN_ARGS="
@@ -199,6 +254,7 @@ ${NAME}
 --env SAS_DEMO_USER
 --env SASLOCKDOWN
 --env SASV9_OPTIONS
+--env PRE_DEPLOY_SCRIPT
 ${STUDIO}
 --volume ${PWD}/sasinside:/sasinside
 --volume ${PWD}/data:/data
@@ -206,7 +262,7 @@ ${STUDIO}
 ${ADDONS}"
 
 # Run Analytics Pro container with supplied arguments
-CONTAINER=$(docker run -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" "${@}")
+CONTAINER=$(docker run ${ENTRYPOINT} -u root ${RUN_ARGS} "${IMAGE}:${IMAGE_VERSION}" ${ARGS})
 
 # Check if there were any problems with the launch
 if [[ $? > 0 ]]; then
@@ -214,7 +270,13 @@ if [[ $? > 0 ]]; then
   exit 1
 fi
 
-if [[ ${BATCH_MODE} == "true" ]]; then
+if [[ ${SASOQ} == "true" ]]; then
+  echo "# Streaming OQ Logs                         #"
+  echo "#############################################"
+  CONTAINER_NAME=$(docker inspect --format='{{.Name}}' ${CONTAINER})
+  echo "Name: ${CONTAINER_NAME}"
+  docker logs ${CONTAINER_NAME} -f
+elif [[ ${BATCH_MODE} == "true" ]]; then
   echo "# Batch Mode                                #"
   echo "#############################################"
   CONTAINER_NAME=$(docker inspect --format='{{.Name}}' ${CONTAINER})
@@ -265,6 +327,9 @@ else
   echo -e "\n#############################################"
 
   echo "Browser Access: http://localhost:${STUDIO_HTTP_PORT}"
+  if [[ ${JUPYTERLAB} == "true" ]]; then
+    echo "JupyterLab: http://localhost:${JUPYTERLAB_HTTP_PORT}"
+  fi
   echo "User ID=${SAS_DEMO_USER}"
 
   if [[ -n ${APRO_PASSWORD} ]]; then

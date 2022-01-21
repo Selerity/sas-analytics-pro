@@ -14,6 +14,11 @@ JUPYTERLAB=false
 # Enable Clinical Standards Toolkit?
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 CST=false
+############################################### 
+# Enable Perl?
+# Requires 9.4 Depot
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+PERL=false
 ###############################################
 
 ###############################################
@@ -36,7 +41,7 @@ SAS94DEPOT=\\files\SASDepot\9.4_M7
 # Docker Image Repository and Tag (Version)   #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 IMAGE=cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-analytics-pro
-IMAGE_VERSION=0.9.25-20220107.1641578822369
+IMAGE_VERSION=0.10.25-20220114.1642157035956
 ###############################################
 
 ###############################################
@@ -71,6 +76,13 @@ SASV9_OPTIONS=
 ###############################################
 
 ###############################################
+# Pre Deploy Commands                         #
+# Be carfeul with special characters!         #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+PRE_DEPLOY_SCRIPT=
+###############################################
+
+###############################################
 # Clinical Standards Toolkit                  #
 # DO NOT CHANGE THESE Options                 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -84,4 +96,11 @@ CSTSAMPLEGEN=products/cstsamplelib__94120__prt__xx__sp0__1/cstsamplelib_gen.zip
 CSTSAMPLELAX=products/cstsamplelib__94120__prt__xx__sp0__1/native_lax.zip
 CSTMACROSGEN=products/cstframework__94120__lax__en__sp0__1/en_sasautos.zip
 CSTHF=http://ftp.sas.com/techsup/download/hotfix/HF2/Z/Z50/Z50002/xx/prt/Z50002pt.zip
+###############################################
+
+###############################################
+# SAS Perl                                    #
+# DO NOT CHANGE THESE Options                 #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+PERLFORSAS=products/perlforsas__94110__prt__xx__sp0__1/native_lax.zip
 ###############################################
