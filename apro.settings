@@ -31,17 +31,10 @@ SAS_DEMO_USER=$USER
 ###############################################
 
 ###############################################
-# SAS 9.4 Depot Location
-# Only needed for CST
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-SAS94DEPOT=\\files\SASDepot\9.4_M7
-###############################################
-
-###############################################
 # Docker Image Repository and Tag (Version)   #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 IMAGE=cr.sas.com/viya-4-x64_oci_linux_2-docker/sas-analytics-pro
-IMAGE_VERSION=0.10.25-20220114.1642157035956
+IMAGE_VERSION=0.11.26-20220216.1645055468933
 ###############################################
 
 ###############################################
@@ -90,11 +83,6 @@ CSTBASE=cst
 CSTMACROS=cst/sasautos
 CSTGLOBAL=cst/cstGlobalLibrary
 CSTSAMPLE=cst/cstSampleLibrary
-CSTGLOBALGEN=products/cstgblstdlib__94120__prt__xx__sp0__1/cstgblstdlib_gen.zip
-CSTGLOBALLAX=products/cstgblstdlib__94120__prt__xx__sp0__1/native_lax.zip
-CSTSAMPLEGEN=products/cstsamplelib__94120__prt__xx__sp0__1/cstsamplelib_gen.zip
-CSTSAMPLELAX=products/cstsamplelib__94120__prt__xx__sp0__1/native_lax.zip
-CSTMACROSGEN=products/cstframework__94120__lax__en__sp0__1/en_sasautos.zip
 CSTHF=http://ftp.sas.com/techsup/download/hotfix/HF2/Z/Z50/Z50002/xx/prt/Z50002pt.zip
 ###############################################
 
@@ -102,5 +90,5 @@ CSTHF=http://ftp.sas.com/techsup/download/hotfix/HF2/Z/Z50/Z50002/xx/prt/Z50002p
 # SAS Perl                                    #
 # DO NOT CHANGE THESE Options                 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-PERLFORSAS=products/perlforsas__94110__prt__xx__sp0__1/native_lax.zip
+PERLFORSAS=https://sas-perl.s3.ap-southeast-2.amazonaws.com/native_lax.zip
 ###############################################

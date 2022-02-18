@@ -149,50 +149,35 @@ if [[ "${CST}" == "true" ]]; then
   # Check if we already have the required files extracted
   if [[ -f "${PWD}/addons/${CSTGLOBAL}/build/buildinfo.xml" && -f "${PWD}/addons/${CSTSAMPLE}/build/buildinfo.xml" && -d "${PWD}/addons/${CSTMACROS}" ]]; then
     CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
-    SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
+    SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\" -set CLASSPATH=/addons/cstautos/sas.cdisc.transforms.jar"
   else
-    # Check that required files can be found in SAS 9.4 Depot
-    if [[ -f "${SAS94DEPOT}/${CSTMACROSGEN}" && 
-          -f "${SAS94DEPOT}/${CSTGLOBALGEN}" && -f "${SAS94DEPOT}/${CSTGLOBALLAX}" && 
-          -f "${SAS94DEPOT}/${CSTSAMPLEGEN}" && -f "${SAS94DEPOT}/${CSTSAMPLELAX}" ]]; then
+    # Check if we can download the CST
+    curl -Ifs ${CSTHF} > /dev/null
+    if [ $? == 0 ]; then
+      CSTDL=$(mktemp)
+      echo "# Add-on: CST being downloaded from SAS     #"
+      curl ${CSTHF} -o ${CSTDL}
+      unzip -q -u ${CSTDL} -d ${PWD}/addons/${CSTBASE}/source
+      rm -f ${CSTDL}
       # Prepare CST files
-      unzip -q -u "${SAS94DEPOT}/${CSTMACROSGEN}" -d ${PWD}/addons/${CSTBASE}
-      unzip -q -u "${SAS94DEPOT}/${CSTGLOBALGEN}" -d ${PWD}/addons/${CSTGLOBAL}
-      unzip -q -u "${SAS94DEPOT}/${CSTGLOBALLAX}" -d ${PWD}/addons/${CSTGLOBAL}
-      unzip -q -u "${SAS94DEPOT}/${CSTSAMPLEGEN}" -d ${PWD}/addons/${CSTSAMPLE}
-      unzip -q -u "${SAS94DEPOT}/${CSTSAMPLELAX}" -d ${PWD}/addons/${CSTSAMPLE}
+      unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstframework__Z46002__lax__en__sp0__1/en_sasautos.zip" -d ${PWD}/addons/${CSTBASE}
+      unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstgblstdlib__Z48002__prt__xx__sp0__1/cstgblstdlib_gen.zip" -d ${PWD}/addons/${CSTGLOBAL}
+      unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstgblstdlib__Z48002__prt__xx__sp0__1/native_lax.zip" -d ${PWD}/addons/${CSTGLOBAL}
+      unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstsamplelib__Z49002__prt__xx__sp0__1/cstsamplelib_gen.zip" -d ${PWD}/addons/${CSTSAMPLE}
+      unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstsamplelib__Z49002__prt__xx__sp0__1/native_lax.zip" -d ${PWD}/addons/${CSTSAMPLE}
+      unzip -q -u -j "${PWD}/addons/${CSTBASE}/source/products/cstfrmwrkjar__Z47002__prt__xx__sp0__1/cstfrmwrkjar_vjr.zip" eclipse/plugins/sas.cdisc.transforms_107000.0.0.20160913165121_f0cltk17/sas.cdisc.transforms.jar -d ${PWD}/addons/${CSTMACROS}
+      rm -Rf "${PWD}/addons/${CSTBASE}/source"
       # Fix SAS Macro code
-      sed -i '' 's/%sysevalf(&sysver)/&sysver/g' ${PWD}/addons/${CSTMACROS}/*
+      sed -i '' 's/%sysevalf(&sysver)/\&sysver/g' ${PWD}/addons/${CSTMACROS}/cstutilgetattribute.sas
+      sed -i '' 's/%sysevalf(&sysver)/\&sysver/g' ${PWD}/addons/${CSTMACROS}/cstutilwriteresultsintro.sas
+      find ${PWD}/addons/${CSTBASE} -name "*.sas" -exec sed -i '' 's/\/ picklist="&_cstJavaPicklist"//g' {} \;
 
       CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
-      SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
+      SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\" -set CLASSPATH=/addons/cstautos/sas.cdisc.transforms.jar"
       echo "# Add-on: CST prepared                      #"
     else
-      # Check if we can download the CST
-      curl -Ifs ${CSTHF} > /dev/null
-      if [ $? == 0 ]; then
-        CSTDL=$(mktemp)
-        echo "# Add-on: CST being downloaded from SAS     #"
-        curl ${CSTHF} -o ${CSTDL}
-        unzip -q -u ${CSTDL} -d ${PWD}/addons/${CSTBASE}/source
-        rm -f ${CSTDL}
-        # Prepare CST files
-        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstframework__Z46002__lax__en__sp0__1/en_sasautos.zip" -d ${PWD}/addons/${CSTBASE}
-        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstgblstdlib__Z48002__prt__xx__sp0__1/cstgblstdlib_gen.zip" -d ${PWD}/addons/${CSTGLOBAL}
-        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstgblstdlib__Z48002__prt__xx__sp0__1/native_lax.zip" -d ${PWD}/addons/${CSTGLOBAL}
-        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstsamplelib__Z49002__prt__xx__sp0__1/cstsamplelib_gen.zip" -d ${PWD}/addons/${CSTSAMPLE}
-        unzip -q -u "${PWD}/addons/${CSTBASE}/source/products/cstsamplelib__Z49002__prt__xx__sp0__1/native_lax.zip" -d ${PWD}/addons/${CSTSAMPLE}
-        rm -Rf "${PWD}/addons/${CSTBASE}/source"
-        # Fix SAS Macro code
-        sed -i '' 's/%sysevalf(&sysver)/&sysver/g' ${PWD}/addons/${CSTMACROS}/*
-
-        CST_ARGS="--volume ${PWD}/addons/${CSTGLOBAL}:/data/cstGlobalLibrary --volume ${PWD}/addons/${CSTSAMPLE}:/data/cstSampleLibrary --volume ${PWD}/addons/${CSTMACROS}:/addons/cstautos"
-        SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\""
-        echo "# Add-on: CST prepared                      #"
-      else
-        echo "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found, and files are not available from SAS for download."
-        exit 1
-      fi
+      echo "ERROR: CST=true but required files are not available from SAS for download."
+      exit 1
     fi
   fi
 else
@@ -207,16 +192,19 @@ if [[ "${PERL}" == "true" ]]; then
     PERL_ARGS="--volume ${PWD}/addons/perl:/opt/sas/viya/home/SASFoundation/perl"
     PERL_PREDEPLOY="chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
   else
-    # Check that required files can be found in SAS 9.4 Depot
-    if [[ -f "${SAS94DEPOT}/${PERLFORSAS}" ]]; then
-      # Prepare Perl for SAS files
-      unzip -q -u "${SAS94DEPOT}/${PERLFORSAS}" -d ${PWD}/addons/perl
-
+    # Check if we can download Perl for SAS
+    curl -Ifs ${PERLFORSAS} > /dev/null
+    if [ $? == 0 ]; then
+      P4SDL=$(mktemp)
+      echo "# Add-on: Perl for SAS being downloaded     #"
+      curl ${PERLFORSAS} -o ${P4SDL}
+      unzip -q -u ${P4SDL} -d ${PWD}/addons/perl
+      rm -f ${P4SDL}
       PERL_ARGS="--volume ${PWD}/addons/perl:/opt/sas/viya/home/SASFoundation/perl"
       PERL_PREDEPLOY="chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
       echo "# Add-on: Perl prepared                     #"
     else
-      echo "ERROR: PERL=true but required files from SAS 9.4 Depot cannot be found."
+      echo "ERROR: PERL=true but required files cannot be downloaded."
       exit 1
     fi
   fi

@@ -11,7 +11,7 @@ You can utilise the SAS Analytics Pro container to run your SAS programs in batc
 **Note:** You will notice that we saved the program file into the `data` directory, which is a subdirectory of this repo, but then referenced that same program with the absolute path `/data/program.sas` on the command line. This is because the `data` directory in this repo is mounted as `/data` _within_ the SAS Analytics Pro environment.
 
 # Running SAS OQ Mode
-To run the **SAS Operational Qualification Tool** (SASOQ) you will need access to a SAS 9.4 Depot.  Add the location of your Depot to the `SAS94DEPOT` option in the `apro.settings` file.  SAS Analytics Pro consists of Base SAS, SAS/STAT and SAS.GRAPH. The SAS testware for these products can be run using the `--sasoq` command line parameter of the launcher:
+SAS Analytics Pro can be run in **SAS Operational Qualification Tool** (SASOQ) mode.  SAS Analytics Pro consists of Base SAS, SAS/STAT and SAS.GRAPH. The SAS testware for these products can be run using the `--sasoq` command line parameter of the launcher:
 ```
 ./launcher.[sh|ps1] --sasoq "-outdir /data/sasoq_results -tables *:base *:stat *:graph"
 ```

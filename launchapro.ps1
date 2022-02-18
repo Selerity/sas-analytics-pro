@@ -133,63 +133,43 @@ if ( $config.CST -eq $True ) {
         (Test-Path -Path $(-join($pwd, "\addons\", $config.CSTSAMPLE, "/build/buildinfo.xml")) -PathType Leaf) -eq $True -And `
         (Test-Path -Path $(-join ($pwd, "\addons\", $config.CSTMACROS)) -PathType Container) -eq $True ) {
         $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
-        $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+        $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos -set CLASSPATH=/addons/cstautos/eclipse/plugins/sas.cdisc.transforms_107000.0.0.20160913165121_f0cltk17/sas.cdisc.transforms.jar")
   } else {
-    # Check that required files can be found in SAS 9.4 Depot
-    if ( (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True `
-        -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTGLOBALLAX) -PathType Leaf) -eq $True `
-        -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLEGEN) -PathType Leaf) -eq $True -And (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.CSTSAMPLELAX) -PathType Leaf) -eq $True) {
+    # Download the CST
+    # create temp with zip extension (or Expand will complain)
+    $tmp = New-TemporaryFile | Rename-Item -NewName { $_ -replace 'tmp$', 'zip' } -PassThru
+    #download
+    Write-Host "# Add-on: CST being downloaded from SAS     #"
+    Invoke-WebRequest -OutFile $tmp $config.CSTHF
+    # Create temp directory
+    $cst_dir = New-Item -ItemType "directory" -Path "$env:TEMP\cstsource" -Force
+    #exract to same folder 
+    $tmp | Expand-Archive -DestinationPath $cst_dir -Force
+    # remove temporary file
+    $tmp | Remove-Item
+
+    if ( (Test-Path -Path $($cst_dir.FullName + "\products") -PathType Container) -eq $True ) {
+
       # Prepare CST files
-      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTMACROSGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTBASE))
-      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
-      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTGLOBALLAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
-      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLEGEN)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
-      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.CSTSAMPLELAX)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+      Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstframework__Z46002__lax__en__sp0__1/en_sasautos.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTBASE))
+      Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstgblstdlib__Z48002__prt__xx__sp0__1/cstgblstdlib_gen.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+      Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstgblstdlib__Z48002__prt__xx__sp0__1/native_lax.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
+      Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstsamplelib__Z49002__prt__xx__sp0__1/cstsamplelib_gen.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+      Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstsamplelib__Z49002__prt__xx__sp0__1/native_lax.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
+      Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstfrmwrkjar__Z47002__prt__xx__sp0__1/cstfrmwrkjar_vjr.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTMACROS))
+      $cst_dir | Remove-Item -Recurse -Force
       # Fix SAS Macro code
-      Get-ChildItem -Path (-join ($pwd, "\addons\", $config.CSTMACROS)) |
+      Get-ChildItem -Recurse -Path (-join ($pwd, "\addons\", $config.CSTBASE)) -Include "*.sas" |
       Foreach-Object {
         (Get-Content $_.FullName).replace('%sysevalf(&sysver)', '&sysver') | Set-Content $_.FullName
-
+        (Get-Content $_.FullName).replace('/ picklist="&_cstJavaPicklist"', '') | Set-Content $_.FullName
       }
       $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
-      $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
+      $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos -set CLASSPATH=/addons/cstautos/eclipse/plugins/sas.cdisc.transforms_107000.0.0.20160913165121_f0cltk17/sas.cdisc.transforms.jar")
       Write-Host "# Add-on: CST prepared                      #"
     } else {
-      # Download the CST
-      # create temp with zip extension (or Expand will complain)
-      $tmp = New-TemporaryFile | Rename-Item -NewName { $_ -replace 'tmp$', 'zip' } -PassThru
-      #download
-      Write-Host "# Add-on: CST being downloaded from SAS     #"
-      Invoke-WebRequest -OutFile $tmp $config.CSTHF
-      # Create temp directory
-      $cst_dir = New-Item -ItemType "directory" -Path "$env:TEMP\cstsource" -Force
-      #exract to same folder 
-      $tmp | Expand-Archive -DestinationPath $cst_dir -Force
-      # remove temporary file
-      $tmp | Remove-Item
-
-      if ( (Test-Path -Path $($cst_dir.FullName + "\products") -PathType Container) -eq $True ) {
-
-        # Prepare CST files
-        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstframework__Z46002__lax__en__sp0__1/en_sasautos.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTBASE))
-        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstgblstdlib__Z48002__prt__xx__sp0__1/cstgblstdlib_gen.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
-        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstgblstdlib__Z48002__prt__xx__sp0__1/native_lax.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTGLOBAL))
-        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstsamplelib__Z49002__prt__xx__sp0__1/cstsamplelib_gen.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
-        Expand-Archive -LiteralPath $((-join($cst_dir.FullName, "/products/cstsamplelib__Z49002__prt__xx__sp0__1/native_lax.zip")) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\", $config.CSTSAMPLE))
-        $cst_dir | Remove-Item -Recurse -Force
-        # Fix SAS Macro code
-        Get-ChildItem -Path (-join ($pwd, "\addons\", $config.CSTMACROS)) |
-        Foreach-Object {
-          (Get-Content $_.FullName).replace('%sysevalf(&sysver)', '&sysver') | Set-Content $_.FullName
-
-        }
-        $cst_args = -join (" --volume '", $pwd, "\addons\", $config.CSTGLOBAL, ":/data/cstGlobalLibrary' --volume '", $pwd, "\addons\", $config.CSTSAMPLE, ":/data/cstSampleLibrary' --volume '", $pwd, "\addons\", $config.CSTMACROS, ":/addons/cstautos'")
-        $env:SASV9_OPTIONS = -join ($env:SASV9_OPTIONS, " -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos /addons/cstautos")
-        Write-Host "# Add-on: CST prepared                      #"
-      } else {
-        Write-Host "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: " $config.SAS94DEPOT
-        Exit 1
-      }
+      Write-Host "ERROR: CST=true but required files are not available from SAS for download."
+      Exit 1
     }
   }
 } else {
@@ -204,18 +184,21 @@ if ( $config.PERL -eq $True ) {
         $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
         $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
   } else {
-    # Check that required files can be found in SAS 9.4 Depot
-    if ( (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.PERLFORSAS) -PathType Leaf) -eq $True ) {
-      # Prepare Perl for SAS files
-      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.PERLFORSAS)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\perl"))
+    # Download Perl for SAS
+    # create temp with zip extension (or Expand will complain)
+    $tmp = New-TemporaryFile | Rename-Item -NewName { $_ -replace 'tmp$', 'zip' } -PassThru
+    #download
+    Write-Host "# Add-on: Perl for SAS being downloaded     #"
+    Invoke-WebRequest -OutFile $tmp $config.PERLFORSAS
+    # Prepare Perl for SAS files
+    $tmp | Expand-Archive -DestinationPath $(-join($pwd, "\addons\perl")) -Force
+    # remove temporary file
+    $tmp | Remove-Item
 
-      $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
-      $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
-      Write-Host "# Add-on: Perl prepared                     #"
-    } else {
-      Write-Host "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: " $config.SAS94DEPOT
-      Exit 1
-    }
+    $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
+    $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
+    Write-Host "# Add-on: Perl prepared                     #"
+
   }
 } else {
   $perl_args = ""
