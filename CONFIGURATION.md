@@ -24,6 +24,8 @@ This is the docker tag and equates to the docker image version. The following li
 | 2021.2.2 | December 2021 | 0.9.24-20211217.1639784757479 |
 |          | January 2022 | 0.9.25-20220107.1641578822369 |
 | 2021.2.3 | January 2022 | 0.10.25-20220114.1642157035956 |
+|          | February 2022 | 0.10.26-20220202.1643765777509 |
+| 2021.2.4 | February 2022 | 0.11.26-20220216.1645055468933 |
 
 ## `JUPYTERLAB`
 If you would like to enable the Jupyter Lab interface then set this value to `true`.  This creates a virtual Python environment within the `python` sub directory of this repo, which is accessed via `/python` within the container.  Your Jupyter Lab environment will contain the SAS Kernel pre-configured against the SAS Analytics Pro environment. By default you will access Jupyter Lab using http://localhost:8888 and use you generated password to login.
