@@ -2,9 +2,9 @@
 ## Overview
 This repo contains info and scripts to help get you up and running with the new Cloud-Native (containerised) version of SAS Analytics Pro from the SAS Institute.  The first release of this software is version 2021.1.4 (August 2021).
 
-This release is for version 2021.2.3 (January 2022).
+This release is for version 2021.2.4 (February 2022).
 
-This repo should be used in conjunction with the official [SAS Analytics Pro Deployment Guide](https://documentation.sas.com/doc/en/anprocdc/v_007/dplyviya0ctr/titlepage.htm).  The intention of this repo is to make a few things for the less technical user a bit easier to get up and running.
+This repo should be used in conjunction with the official [SAS Analytics Pro Deployment Guide](https://documentation.sas.com/doc/en/anprocdc/v_008/anprowlcm/home.htm).  The intention of this repo is to make a few things for the less technical user a bit easier to get up and running.
 
 ## Pre-requisites
 * [Docker Desktop](https://www.docker.com/products/docker-desktop) for Windows or Mac (or "just docker" for Linux)
