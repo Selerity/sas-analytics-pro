@@ -184,18 +184,21 @@ if ( $config.PERL -eq $True ) {
         $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
         $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
   } else {
-    # Check that required files can be found in SAS 9.4 Depot
-    if ( (Test-Path -Path $($config.SAS94DEPOT + "\" + $config.PERLFORSAS) -PathType Leaf) -eq $True ) {
-      # Prepare Perl for SAS files
-      Expand-Archive -LiteralPath $((-join($config.SAS94DEPOT, "\", $config.PERLFORSAS)) -replace '/','\') -DestinationPath $(-join($pwd, "\addons\perl"))
+    # Download Perl for SAS
+    # create temp with zip extension (or Expand will complain)
+    $tmp = New-TemporaryFile | Rename-Item -NewName { $_ -replace 'tmp$', 'zip' } -PassThru
+    #download
+    Write-Host "# Add-on: Perl for SAS being downloaded     #"
+    Invoke-WebRequest -OutFile $tmp $config.PERLFORSAS
+    # Prepare Perl for SAS files
+    $tmp | Expand-Archive -DestinationPath $(-join($pwd, "\addons\perl")) -Force
+    # remove temporary file
+    $tmp | Remove-Item
 
-      $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
-      $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
-      Write-Host "# Add-on: Perl prepared                     #"
-    } else {
-      Write-Host "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found. SAS 9.4 Depot: " $config.SAS94DEPOT
-      Exit 1
-    }
+    $perl_args = -join (" --volume '", $pwd, "\addons\perl", ":/opt/sas/viya/home/SASFoundation/perl'")
+    $perl_predeploy = "chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
+    Write-Host "# Add-on: Perl prepared                     #"
+
   }
 } else {
   $perl_args = ""

@@ -176,7 +176,7 @@ if [[ "${CST}" == "true" ]]; then
       SASV9_OPTIONS="${SASV9_OPTIONS} -CSTGLOBALLIB=/data/cstGlobalLibrary -CSTSAMPLELIB=/data/cstSampleLibrary -insert sasautos \"/addons/cstautos\" -set CLASSPATH=/addons/cstautos/sas.cdisc.transforms.jar"
       echo "# Add-on: CST prepared                      #"
     else
-      echo "ERROR: CST=true but required files from SAS 9.4 Depot cannot be found, and files are not available from SAS for download."
+      echo "ERROR: CST=true but required files are not available from SAS for download."
       exit 1
     fi
   fi
@@ -192,16 +192,19 @@ if [[ "${PERL}" == "true" ]]; then
     PERL_ARGS="--volume ${PWD}/addons/perl:/opt/sas/viya/home/SASFoundation/perl"
     PERL_PREDEPLOY="chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
   else
-    # Check that required files can be found in SAS 9.4 Depot
-    if [[ -f "${SAS94DEPOT}/${PERLFORSAS}" ]]; then
-      # Prepare Perl for SAS files
-      unzip -q -u "${SAS94DEPOT}/${PERLFORSAS}" -d ${PWD}/addons/perl
-
+    # Check if we can download Perl for SAS
+    curl -Ifs ${PERLFORSAS} > /dev/null
+    if [ $? == 0 ]; then
+      P4SDL=$(mktemp)
+      echo "# Add-on: Perl for SAS being downloaded     #"
+      curl ${PERLFORSAS} -o ${P4SDL}
+      unzip -q -u ${P4SDL} -d ${PWD}/addons/perl
+      rm -f ${P4SDL}
       PERL_ARGS="--volume ${PWD}/addons/perl:/opt/sas/viya/home/SASFoundation/perl"
       PERL_PREDEPLOY="chmod 755 /opt/sas/viya/home/SASFoundation/perl/bin/*"
       echo "# Add-on: Perl prepared                     #"
     else
-      echo "ERROR: PERL=true but required files from SAS 9.4 Depot cannot be found."
+      echo "ERROR: PERL=true but required files cannot be downloaded."
       exit 1
     fi
   fi
