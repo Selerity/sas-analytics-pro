@@ -18,7 +18,7 @@ CST=false
 # Enable Perl?
 # Requires 9.4 Depot
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-PERL=false
+PERL=true
 ###############################################
 
 ###############################################
@@ -90,11 +90,6 @@ CSTBASE=cst
 CSTMACROS=cst/sasautos
 CSTGLOBAL=cst/cstGlobalLibrary
 CSTSAMPLE=cst/cstSampleLibrary
-CSTGLOBALGEN=products/cstgblstdlib__94120__prt__xx__sp0__1/cstgblstdlib_gen.zip
-CSTGLOBALLAX=products/cstgblstdlib__94120__prt__xx__sp0__1/native_lax.zip
-CSTSAMPLEGEN=products/cstsamplelib__94120__prt__xx__sp0__1/cstsamplelib_gen.zip
-CSTSAMPLELAX=products/cstsamplelib__94120__prt__xx__sp0__1/native_lax.zip
-CSTMACROSGEN=products/cstframework__94120__lax__en__sp0__1/en_sasautos.zip
 CSTHF=http://ftp.sas.com/techsup/download/hotfix/HF2/Z/Z50/Z50002/xx/prt/Z50002pt.zip
 ###############################################
 
@@ -102,5 +97,5 @@ CSTHF=http://ftp.sas.com/techsup/download/hotfix/HF2/Z/Z50/Z50002/xx/prt/Z50002p
 # SAS Perl                                    #
 # DO NOT CHANGE THESE Options                 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-PERLFORSAS=products/perlforsas__94110__prt__xx__sp0__1/native_lax.zip
+PERLFORSAS=https://sas-perl.s3.ap-southeast-2.amazonaws.com/native_lax.zip
 ###############################################
