@@ -1,4 +1,10 @@
 # SAS Analytics Pro (Cloud-Native)
+
+## IMPORTANT
+
+This repo has been deprecated as of April 2022 in favour of _Selerity Desktop (Personal)_ which is available for free from  https://seleritysas.com/selerity-desktop-personal/
+
+---
 ## Overview
 This repo contains info and scripts to help get you up and running with the new Cloud-Native (containerised) version of SAS Analytics Pro from the SAS Institute.  The first release of this software is version 2021.1.4 (August 2021).
 
